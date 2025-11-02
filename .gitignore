@@ -64,8 +64,12 @@ test-results/
 .temp/
 .tmp/
 
-# Claude Dev Files
+# Claude Dev Files (contain project IDs and sensitive info)
 bajetAI_overview.md
 CLAUDE.MD
 DEVELOPMENT_PLAN.MD
 DEVELOPMENT_PLAN_v1_partial.md
+NEXT_STEPS.md
+database/README.md
+database/STORAGE_SETUP.md
+FIX_RLS_ERROR.md
