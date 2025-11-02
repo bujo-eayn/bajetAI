@@ -1,15 +1,41 @@
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, profile, loading, signOut } = useAuth();
+  const [stats, setStats] = React.useState({
+    totalDocuments: 0,
+    totalComments: 0,
+  });
+  const [statsLoading, setStatsLoading] = React.useState(true);
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+  React.useEffect(() => {
+    if (!loading && user) {
+      fetchStats();
+    }
+  }, [loading, user]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/documents');
+      const data = await response.json();
+
+      if (response.ok) {
+        setStats({
+          totalDocuments: data.total || 0,
+          totalComments: 0, // Will be implemented in Phase 8
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
   };
 
   if (loading) {
@@ -21,31 +47,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex">
-              <div className="flex flex-shrink-0 items-center">
-                <h1 className="text-xl font-bold text-gray-900">bajetAI</h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <div className="mr-4 text-sm text-gray-700">
-                {profile?.full_name || user?.email}
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Dashboard
@@ -79,7 +81,9 @@ export default function DashboardPage() {
                     <dt className="truncate text-sm font-medium text-gray-500">
                       Total Documents
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">0</dd>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {statsLoading ? '...' : stats.totalDocuments}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -109,7 +113,9 @@ export default function DashboardPage() {
                     <dt className="truncate text-sm font-medium text-gray-500">
                       Total Comments
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">0</dd>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {statsLoading ? '...' : stats.totalComments}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -152,18 +158,18 @@ export default function DashboardPage() {
         <div className="mt-8 rounded-lg bg-white p-6 shadow">
           <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <button
-              disabled
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            <Link
+              href="/dashboard/upload"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Upload Document
-            </button>
-            <button
-              disabled
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            </Link>
+            <Link
+              href="/dashboard/documents"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               View Documents
-            </button>
+            </Link>
             <button
               disabled
               className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -178,11 +184,10 @@ export default function DashboardPage() {
             </button>
           </div>
           <p className="mt-4 text-sm text-gray-500">
-            Phase 2 (Authentication) is complete. Additional features will be
-            available in upcoming phases.
+            Phase 3 (Document Upload) is complete. Comment moderation and analytics
+            will be available in upcoming phases.
           </p>
         </div>
-      </main>
     </div>
   );
 }
