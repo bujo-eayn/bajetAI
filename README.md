@@ -22,6 +22,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
 ## Features
 
 ### For Budget Officials
+
 - Secure authentication and role-based access
 - Document upload with automated processing
 - AI-generated English summaries
@@ -31,6 +32,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
 - Analytics and insights on citizen feedback
 
 ### For Citizens
+
 - Public access to budget summaries (no login required)
 - View summaries in English and Swahili
 - Submit comments and feedback
@@ -39,6 +41,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
 ## Tech Stack
 
 ### Frontend
+
 - **Next.js 14+** - React framework with App Router
 - **React 18** - UI library
 - **TypeScript** - Type safety
@@ -46,6 +49,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
 - **shadcn/ui** - UI components
 
 ### Backend
+
 - **Next.js API Routes** - Serverless API
 - **Supabase** - Backend-as-a-Service
   - PostgreSQL database
@@ -54,6 +58,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
   - Row Level Security (RLS)
 
 ### AI Processing
+
 - **Hugging Face Inference API** - AI model hosting
 - **Models Used:**
   - `facebook/bart-large-cnn` - Summarization
@@ -62,6 +67,7 @@ The platform uses **free and open-source AI models** via Hugging Face Inference 
   - `facebook/bart-large-mnli` - Comment categorization
 
 ### Deployment
+
 - **Vercel** - Hosting and CI/CD
 - **GitHub** - Version control
 
@@ -117,12 +123,14 @@ bajetAI/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/bajetAI.git
    cd bajetAI
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -142,6 +150,7 @@ bajetAI/
 5. **Configure environment variables**
 
    Create `.env.local` file in the root directory:
+
    ```env
    # Supabase
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -156,6 +165,7 @@ bajetAI/
    ```
 
 6. **Run the development server**
+
    ```bash
    npm run dev
    # or
@@ -309,6 +319,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Roadmap
 
 ### Phase 1: MVP (Current)
+
 - [x] Project setup
 - [ ] Authentication
 - [ ] Document upload
@@ -318,12 +329,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Comment system
 
 ### Phase 2: Enhancement
+
 - [ ] Comment analysis
 - [ ] Official dashboard
 - [ ] Analytics
 - [ ] Export functionality
 
 ### Phase 3: Scale
+
 - [ ] Multi-language support (French, Arabic)
 - [ ] Advanced analytics
 - [ ] Offline mode

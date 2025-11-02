@@ -31,6 +31,7 @@ Thank you for your interest in contributing to bajetAI! This document provides g
 ### Creating a Feature
 
 1. **Create a branch from develop**
+
    ```bash
    git checkout develop
    git pull origin develop
@@ -46,6 +47,7 @@ Thank you for your interest in contributing to bajetAI! This document provides g
 3. **Commit your changes**
    - Use conventional commit messages
    - Reference issue numbers
+
    ```bash
    git add .
    git commit -m "feat(component): add new feature
@@ -56,6 +58,7 @@ Thank you for your interest in contributing to bajetAI! This document provides g
    ```
 
 4. **Push your branch**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -79,6 +82,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 ### Types
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -89,6 +93,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - `perf`: Performance improvements
 
 ### Examples
+
 ```bash
 feat(auth): add password reset functionality
 fix(upload): resolve file size validation error
@@ -100,24 +105,28 @@ chore: update dependencies to latest versions
 ## Code Style
 
 ### TypeScript
+
 - Use TypeScript for all new code
 - Define proper types (avoid `any`)
 - Use interfaces for object shapes
 - Export types from `types/index.ts`
 
 ### React Components
+
 - Use functional components with hooks
 - Prefer named exports over default exports
 - Co-locate types with components when component-specific
 - Use proper prop types
 
 ### File Naming
+
 - Components: `PascalCase.tsx` (e.g., `DocumentList.tsx`)
 - Utilities: `camelCase.ts` (e.g., `formatDate.ts`)
 - Types: `camelCase.ts` (e.g., `document.types.ts`)
 - API routes: `route.ts` in Next.js 14+
 
 ### Code Organization
+
 ```
 components/
 ├── ui/              # Reusable UI components
@@ -129,6 +138,7 @@ components/
 ## Testing
 
 ### Running Tests
+
 ```bash
 # Unit tests
 npm test
@@ -144,27 +154,30 @@ npm run test:coverage
 ```
 
 ### Writing Tests
+
 - Write tests for new features
 - Update tests when changing functionality
 - Aim for >80% code coverage
 - Test edge cases and error scenarios
 
 ### Test Structure
+
 ```typescript
 describe('ComponentName', () => {
   it('should render correctly', () => {
     // Test implementation
-  })
+  });
 
   it('should handle user interaction', () => {
     // Test implementation
-  })
-})
+  });
+});
 ```
 
 ## Pull Request Guidelines
 
 ### Before Submitting
+
 - [ ] Code follows project style guide
 - [ ] Tests pass (`npm test`)
 - [ ] No TypeScript errors (`npm run type-check`)
@@ -174,6 +187,7 @@ describe('ComponentName', () => {
 - [ ] Commit messages follow convention
 
 ### PR Description
+
 - Clearly describe what the PR does
 - Link related issues
 - Include screenshots for UI changes
@@ -181,6 +195,7 @@ describe('ComponentName', () => {
 - Describe testing performed
 
 ### Code Review Process
+
 1. At least one approval required
 2. All comments must be addressed
 3. CI/CD checks must pass
@@ -189,6 +204,7 @@ describe('ComponentName', () => {
 ## Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 - Git
@@ -196,9 +212,11 @@ describe('ComponentName', () => {
 - Hugging Face account
 
 ### Environment Variables
+
 See `.env.local.example` for required variables.
 
 ### Database Setup
+
 1. Create Supabase project
 2. Run migrations from `database/migrations/`
 3. Set up RLS policies
@@ -207,6 +225,7 @@ See `.env.local.example` for required variables.
 ## Issue Guidelines
 
 ### Creating Issues
+
 - Use appropriate issue template
 - Provide clear description
 - Include reproduction steps (for bugs)
@@ -214,6 +233,7 @@ See `.env.local.example` for required variables.
 - Link related issues
 
 ### Issue Labels
+
 - `bug`: Something isn't working
 - `feature`: New feature request
 - `docs`: Documentation
@@ -224,12 +244,14 @@ See `.env.local.example` for required variables.
 ## Security
 
 ### Reporting Vulnerabilities
+
 - DO NOT open public issues for security vulnerabilities
 - Email: [security@bajetai.com] (update with actual email)
 - Provide detailed description
 - Include steps to reproduce
 
 ### Security Best Practices
+
 - Never commit sensitive data (API keys, passwords)
 - Validate all user inputs
 - Use RLS policies in Supabase
@@ -246,6 +268,7 @@ See `.env.local.example` for required variables.
 ## Code of Conduct
 
 Be respectful and professional:
+
 - Be welcoming and inclusive
 - Respect differing viewpoints
 - Accept constructive criticism
