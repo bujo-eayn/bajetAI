@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type Document = {
   id: string;
@@ -101,6 +107,14 @@ export default function DocumentsPage() {
 
   const formatFileSize = (bytes: number) => {
     return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  };
+
+  const truncateTitle = (title: string) => {
+    const words = title.trim().split(/\s+/);
+    if (words.length > 3) {
+      return words.slice(0, 3).join(' ') + '...';
+    }
+    return title;
   };
 
   return (
@@ -205,75 +219,95 @@ export default function DocumentsPage() {
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden bg-white shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-300">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Title
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Size
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Uploaded
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {documents.map((document) => (
-                <tr key={document.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {document.title}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {document.uploader.full_name || document.uploader.email}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(
-                        document.status
-                      )}`}
-                    >
-                      {document.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {formatFileSize(document.file_size)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {formatDate(document.created_at)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <a
-                      href={document.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mr-4 text-blue-600 hover:text-blue-900"
-                    >
-                      View
-                    </a>
-                    <button
-                      onClick={() => handleDelete(document.id)}
-                      disabled={deleting === document.id}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                    >
-                      {deleting === document.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
+        <TooltipProvider>
+          <div className="overflow-x-auto bg-white shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+            <table className="min-w-full table-fixed divide-y divide-gray-300">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="w-[35%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                    Title
+                  </th>
+                  <th className="w-[15%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Status
+                  </th>
+                  <th className="w-[12%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Size
+                  </th>
+                  <th className="w-[18%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Uploaded
+                  </th>
+                  <th className="w-[20%] px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {documents.map((document) => (
+                  <tr key={document.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-4 sm:px-6">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-default">
+                            <div className="text-sm font-medium text-gray-900">
+                              {truncateTitle(document.title)}
+                            </div>
+                            <div className="truncate text-sm text-gray-500">
+                              {document.uploader.full_name || document.uploader.email}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-md">
+                          <p className="font-medium">{document.title}</p>
+                          <p className="text-xs text-gray-400">
+                            by {document.uploader.full_name || document.uploader.email}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                    <td className="px-2 py-4 sm:px-4">
+                      <span
+                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(
+                          document.status
+                        )}`}
+                      >
+                        {document.status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
+                      <div className="truncate">
+                        {formatFileSize(document.file_size)}
+                      </div>
+                    </td>
+                    <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
+                      <div className="truncate">
+                        {formatDate(document.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 text-right text-sm font-medium sm:px-6">
+                      <div className="flex justify-end space-x-2 sm:space-x-4">
+                        <a
+                          href={document.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </a>
+                        <button
+                          onClick={() => handleDelete(document.id)}
+                          disabled={deleting === document.id}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        >
+                          {deleting === document.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </TooltipProvider>
       )}
     </div>
   );
