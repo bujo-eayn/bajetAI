@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import type { ExtractionStatus, ExtractionErrorType } from '@/types';
 
 type Document = {
   id: string;
@@ -18,6 +20,11 @@ type Document = {
   file_url: string;
   status: string;
   created_at: string;
+  extraction_status: ExtractionStatus;
+  extraction_error: string | null;
+  extraction_error_type: ExtractionErrorType | null;
+  extraction_page_count: number | null;
+  extraction_char_count: number | null;
   uploader: {
     full_name: string | null;
     email: string;
@@ -31,6 +38,8 @@ export default function DocumentsPage() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -54,9 +63,53 @@ export default function DocumentsPage() {
     }
   }, [filter]);
 
+  // Initial fetch
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  // Supabase Realtime subscription for document updates
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Subscribe to document changes
+    const channel = supabase
+      .channel('documents-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'documents',
+        },
+        (payload) => {
+          console.log('Realtime update received:', payload);
+
+          // Update the specific document in our local state
+          setDocuments((prevDocs) =>
+            prevDocs.map((doc) =>
+              doc.id === payload.new.id
+                ? {
+                    ...doc,
+                    extraction_status: payload.new.extraction_status,
+                    extraction_error: payload.new.extraction_error,
+                    extraction_error_type: payload.new.extraction_error_type,
+                    extraction_page_count: payload.new.extraction_page_count,
+                    extraction_char_count: payload.new.extraction_char_count,
+                    status: payload.new.status,
+                  }
+                : doc
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this document?')) {
@@ -84,16 +137,108 @@ export default function DocumentsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const handleRetryExtraction = async (id: string) => {
+    if (!confirm('Retry text extraction for this document?')) {
+      return;
+    }
+
+    try {
+      setRetrying(id);
+      const response = await fetch(`/api/documents/${id}/retry-extraction`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to retry extraction');
+      }
+
+      // Update local state to show pending status
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id
+            ? { ...doc, extraction_status: 'pending' as ExtractionStatus }
+            : doc
+        )
+      );
+
+      alert('Extraction retry queued successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to retry extraction');
+    } finally {
+      setRetrying(null);
+    }
+  };
+
+  const getExtractionStatusBadge = (document: Document) => {
+    const status = document.extraction_status;
+
     switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'archived':
-        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
+            ⏳ Pending
+          </span>
+        );
+      case 'extracting':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+            <svg
+              className="h-3 w-3 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Extracting...
+          </span>
+        );
+      case 'completed':
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-default items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                ✓ Extracted
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {document.extraction_page_count || 0} pages,{' '}
+                {document.extraction_char_count?.toLocaleString() || 0} chars
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      case 'failed':
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-default items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                ✗ Failed
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="font-semibold">{document.extraction_error_type}</p>
+              <p className="text-xs">{document.extraction_error}</p>
+            </TooltipContent>
+          </Tooltip>
+        );
       default:
-        return 'bg-gray-100 text-gray-800';
+        return null;
     }
   };
 
@@ -102,6 +247,30 @@ export default function DocumentsPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const handleSortToggle = () => {
+    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+
+    setDocuments((prevDocs) => {
+      const sorted = [...prevDocs].sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortOrder === 'desc' ? dateA - dateB : dateB - dateA;
+      });
+      return sorted;
     });
   };
 
@@ -221,22 +390,42 @@ export default function DocumentsPage() {
       ) : (
         <TooltipProvider>
           <div className="overflow-x-auto bg-white shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            <table className="min-w-full table-fixed divide-y divide-gray-300">
+            <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="w-[35%] px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
                     Title
                   </th>
-                  <th className="w-[15%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
-                    Status
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Extraction Status
                   </th>
-                  <th className="w-[12%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
                     Size
                   </th>
-                  <th className="w-[18%] px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
-                    Uploaded
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    <button
+                      onClick={handleSortToggle}
+                      className="flex items-center gap-1 hover:text-gray-700"
+                    >
+                      Uploaded
+                      <svg
+                        className={`h-4 w-4 transition-transform ${
+                          sortOrder === 'desc' ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
                   </th>
-                  <th className="w-[20%] px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
                     Actions
                   </th>
                 </tr>
@@ -252,47 +441,62 @@ export default function DocumentsPage() {
                               {truncateTitle(document.title)}
                             </div>
                             <div className="truncate text-sm text-gray-500">
-                              {document.uploader.full_name || document.uploader.email}
+                              {document.uploader.full_name ||
+                                document.uploader.email}
                             </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-md">
                           <p className="font-medium">{document.title}</p>
                           <p className="text-xs text-gray-400">
-                            by {document.uploader.full_name || document.uploader.email}
+                            by{' '}
+                            {document.uploader.full_name ||
+                              document.uploader.email}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </td>
                     <td className="px-2 py-4 sm:px-4">
-                      <span
-                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(
-                          document.status
-                        )}`}
-                      >
-                        {document.status}
-                      </span>
+                      {getExtractionStatusBadge(document)}
                     </td>
                     <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
-                      <div className="truncate">
-                        {formatFileSize(document.file_size)}
-                      </div>
+                      {formatFileSize(document.file_size)}
                     </td>
                     <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
-                      <div className="truncate">
-                        {formatDate(document.created_at)}
-                      </div>
+                      {formatDateTime(document.created_at)}
                     </td>
                     <td className="px-3 py-4 text-right text-sm font-medium sm:px-6">
-                      <div className="flex justify-end space-x-2 sm:space-x-4">
+                      <div className="flex justify-end space-x-2">
                         <a
                           href={document.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-900"
                         >
-                          View
+                          View PDF
                         </a>
+
+                        {/* View Text button (only if extraction completed) */}
+                        {document.extraction_status === 'completed' && (
+                          <Link
+                            href={`/dashboard/documents/${document.id}/text`}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            View Text
+                          </Link>
+                        )}
+
+                        {/* Retry button (only if extraction failed) */}
+                        {document.extraction_status === 'failed' && (
+                          <button
+                            onClick={() => handleRetryExtraction(document.id)}
+                            disabled={retrying === document.id}
+                            className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                          >
+                            {retrying === document.id ? 'Retrying...' : 'Retry'}
+                          </button>
+                        )}
+
                         <button
                           onClick={() => handleDelete(document.id)}
                           disabled={deleting === document.id}
