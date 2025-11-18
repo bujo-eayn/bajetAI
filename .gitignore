@@ -73,3 +73,6 @@ NEXT_STEPS.md
 database/README.md
 database/STORAGE_SETUP.md
 FIX_RLS_ERROR.md
+
+# Claude Code configuration and preferences
+.claude/
