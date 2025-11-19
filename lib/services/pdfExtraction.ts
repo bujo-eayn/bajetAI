@@ -1,32 +1,10 @@
 // PDF Text Extraction Service
-// This service handles all PDF text extraction logic using pdfjs-dist
+// This service handles all PDF text extraction logic using unpdf
+// unpdf is optimized for serverless environments and works across all JS runtimes
 
-import * as pdfjsLib from 'pdfjs-dist';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { createAdminClient } from '@/lib/supabase/server';
 import type { ExtractionResult, ExtractionErrorType } from '@/types';
-import path from 'path';
-import { pathToFileURL } from 'url';
-
-// Configure pdfjs worker for server-side (Node.js)
-// We disable canvas since we only need text extraction, not rendering
-if (typeof window === 'undefined') {
-  // Server-side configuration
-  // Use the bundled worker from node_modules
-  // Construct the absolute path to the worker file
-  const workerPath = path.join(
-    process.cwd(),
-    'node_modules',
-    'pdfjs-dist',
-    'build',
-    'pdf.worker.min.mjs'
-  );
-  // Convert Windows path to file:// URL for ESM loader compatibility
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
-
-  // Disable canvas for Node.js environment (text extraction only)
-  // This allows pdfjs-dist to work without the canvas native module
-  (pdfjsLib as any).GlobalWorkerOptions.isEvalSupported = false;
-}
 
 /**
  * Download PDF from Supabase Storage
@@ -69,48 +47,28 @@ async function downloadPDFFromStorage(fileName: string): Promise<Buffer> {
 }
 
 /**
- * Extract text from PDF using pdfjs-dist
- * Processes each page sequentially and combines all text
+ * Extract text from PDF using unpdf
+ * unpdf handles all the complexity of PDF parsing across different environments
  */
-async function extractWithPDFJS(
+async function extractWithUnpdf(
   pdfBuffer: Buffer
 ): Promise<{ text: string; pageCount: number }> {
   try {
-    // Load PDF document
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(pdfBuffer),
-      useSystemFonts: true,
-      // Don't specify standardFontDataUrl in Node.js - let pdfjs use bundled fonts
-    });
+    // Convert Buffer to Uint8Array for unpdf
+    const uint8Array = new Uint8Array(pdfBuffer);
 
-    const pdfDocument = await loadingTask.promise;
-    const pageCount = pdfDocument.numPages;
-    const textParts: string[] = [];
+    // Load PDF document proxy
+    const pdf = await getDocumentProxy(uint8Array);
 
-    // Extract text from each page
-    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const textContent = await page.getTextContent();
-
-      // Combine text items from page
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-
-      if (pageText.trim()) {
-        textParts.push(pageText);
-      }
-    }
-
-    // Combine all pages
-    const combinedText = textParts.join('\n\n');
+    // Extract text from all pages (mergePages: true combines all pages into one string)
+    const { totalPages, text } = await extractText(pdf, { mergePages: true });
 
     return {
-      text: combinedText,
-      pageCount,
+      text: text as string, // mergePages: true returns a string
+      pageCount: totalPages,
     };
   } catch (error) {
-    console.error('pdfjs extraction error:', error);
+    console.error('unpdf extraction error:', error);
     throw error;
   }
 }
@@ -259,9 +217,9 @@ export async function extractTextFromPDF(
     console.log(`Downloading PDF: ${document.file_name}`);
     const pdfBuffer = await downloadPDFFromStorage(document.file_name);
 
-    // 4. Extract text using pdfjs
+    // 4. Extract text using unpdf
     console.log(`Extracting text from PDF...`);
-    const { text, pageCount } = await extractWithPDFJS(pdfBuffer);
+    const { text, pageCount } = await extractWithUnpdf(pdfBuffer);
 
     // 5. Check if text is empty
     if (!text || text.trim().length === 0) {
