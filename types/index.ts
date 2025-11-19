@@ -10,6 +10,18 @@ export type DocumentStatus = 'processing' | 'published' | 'archived';
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected';
 
+export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'failed';
+
+export type ExtractionErrorType =
+  | 'corrupt_file'
+  | 'encrypted'
+  | 'empty'
+  | 'timeout'
+  | 'memory_error'
+  | 'download_failed'
+  | 'parsing_error'
+  | 'unknown';
+
 // Comment categories (will be detected by AI)
 export type CommentCategory =
   | 'Education'
@@ -72,6 +84,15 @@ export type Database = {
           summary_en: string | null;
           summary_sw: string | null;
           processed: boolean;
+          extraction_status: ExtractionStatus;
+          extraction_error: string | null;
+          extraction_error_type: ExtractionErrorType | null;
+          extracted_text_url: string | null;
+          extraction_page_count: number | null;
+          extraction_char_count: number | null;
+          extraction_started_at: string | null;
+          extraction_completed_at: string | null;
+          extraction_duration_ms: number | null;
         };
         Insert: {
           id?: string;
@@ -87,6 +108,15 @@ export type Database = {
           summary_en?: string | null;
           summary_sw?: string | null;
           processed?: boolean;
+          extraction_status?: ExtractionStatus;
+          extraction_error?: string | null;
+          extraction_error_type?: ExtractionErrorType | null;
+          extracted_text_url?: string | null;
+          extraction_page_count?: number | null;
+          extraction_char_count?: number | null;
+          extraction_started_at?: string | null;
+          extraction_completed_at?: string | null;
+          extraction_duration_ms?: number | null;
         };
         Update: {
           id?: string;
@@ -102,6 +132,15 @@ export type Database = {
           summary_en?: string | null;
           summary_sw?: string | null;
           processed?: boolean;
+          extraction_status?: ExtractionStatus;
+          extraction_error?: string | null;
+          extraction_error_type?: ExtractionErrorType | null;
+          extracted_text_url?: string | null;
+          extraction_page_count?: number | null;
+          extraction_char_count?: number | null;
+          extraction_started_at?: string | null;
+          extraction_completed_at?: string | null;
+          extraction_duration_ms?: number | null;
         };
       };
       comments: {
@@ -270,6 +309,27 @@ export type CommentAnalysisResult = {
   category: CommentCategory;
   sentiment?: 'positive' | 'negative' | 'neutral';
   confidence: number; // 0-1
+};
+
+// ============================================================================
+// PDF Extraction Types (Phase 4)
+// ============================================================================
+
+export type ExtractionResult = {
+  success: boolean;
+  textUrl?: string;
+  pageCount?: number;
+  charCount?: number;
+  error?: string;
+  errorType?: ExtractionErrorType;
+  durationMs?: number;
+};
+
+export type ExtractionEventPayload = {
+  documentId: string;
+  fileName: string;
+  fileSize: number;
+  fileUrl: string;
 };
 
 // ============================================================================

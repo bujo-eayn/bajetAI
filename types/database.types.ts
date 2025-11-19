@@ -96,8 +96,17 @@ export type Database = {
       documents: {
         Row: {
           created_at: string
-          extracted_text: string | null
+          extracted_text_url: string | null
+          extraction_char_count: number | null
+          extraction_completed_at: string | null
+          extraction_duration_ms: number | null
+          extraction_error: string | null
+          extraction_error_type: string | null
+          extraction_page_count: number | null
+          extraction_started_at: string | null
+          extraction_status: string | null
           file_name: string
+          file_path: string | null
           file_size: number | null
           file_url: string
           id: string
@@ -111,8 +120,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          extracted_text?: string | null
+          extracted_text_url?: string | null
+          extraction_char_count?: number | null
+          extraction_completed_at?: string | null
+          extraction_duration_ms?: number | null
+          extraction_error?: string | null
+          extraction_error_type?: string | null
+          extraction_page_count?: number | null
+          extraction_started_at?: string | null
+          extraction_status?: string | null
           file_name: string
+          file_path?: string | null
           file_size?: number | null
           file_url: string
           id?: string
@@ -126,8 +144,17 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          extracted_text?: string | null
+          extracted_text_url?: string | null
+          extraction_char_count?: number | null
+          extraction_completed_at?: string | null
+          extraction_duration_ms?: number | null
+          extraction_error?: string | null
+          extraction_error_type?: string | null
+          extraction_page_count?: number | null
+          extraction_started_at?: string | null
+          extraction_status?: string | null
           file_name?: string
+          file_path?: string | null
           file_size?: number | null
           file_url?: string
           id?: string
