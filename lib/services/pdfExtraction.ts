@@ -259,6 +259,7 @@ export async function extractTextFromPDF(
     return {
       success: true,
       textUrl,
+      extractedTextUrl: textUrl, // Also include as extractedTextUrl for Inngest event
       pageCount,
       charCount: text.length,
       durationMs,

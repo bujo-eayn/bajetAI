@@ -160,7 +160,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
     const body = await request.json();
-    const { status, title } = body;
+    const { status, title, summary_en } = body;
 
     // Fetch document to check ownership
     const { data: document, error: fetchError } = await supabase
@@ -191,6 +191,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
     if (title && title.trim().length > 0) {
       updates.title = title.trim();
+    }
+    if (summary_en !== undefined) {
+      updates.summary_en = summary_en;
+      // When manually updating summary, mark as completed if it has content
+      if (summary_en && summary_en.trim().length > 0) {
+        updates.summarization_status = 'completed';
+        // Set confidence to 0.5 for manual summaries (to distinguish from AI)
+        if (updates.summary_confidence === undefined) {
+          updates.summary_confidence = 0.5;
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {

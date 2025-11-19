@@ -46,10 +46,38 @@ export const extractDocument = inngest.createFunction(
         durationMs: result.durationMs,
       });
 
+      // Step 2: Trigger summarization if extraction succeeded and has sufficient text
+      // Only trigger if we have meaningful content (>100 characters)
+      const shouldSummarize = result.charCount && result.charCount > 100;
+
+      if (shouldSummarize && result.extractedTextUrl) {
+        await step.run('trigger-summarization', async () => {
+          console.log(`Triggering summarization for document ${documentId}`);
+
+          // Send event to trigger summarization
+          // TypeScript assertion: we've already verified extractedTextUrl exists in the if condition
+          await inngest.send({
+            name: INNGEST_EVENTS.EXTRACTION_COMPLETED,
+            data: {
+              documentId,
+              extractedTextUrl: result.extractedTextUrl as string,
+            },
+          });
+
+          console.log(`Summarization event sent for document ${documentId}`);
+        });
+      } else {
+        console.log(
+          `Skipping summarization for document ${documentId} ` +
+          `(charCount: ${result.charCount}, url: ${result.extractedTextUrl})`
+        );
+      }
+
       return {
         success: true,
         message: 'Text extraction completed successfully',
         data: result,
+        summarizationTriggered: shouldSummarize,
       };
     } else {
       console.error('Extraction failed:', {
