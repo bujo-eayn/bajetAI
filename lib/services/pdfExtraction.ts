@@ -4,24 +4,13 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { createAdminClient } from '@/lib/supabase/server';
 import type { ExtractionResult, ExtractionErrorType } from '@/types';
-import path from 'path';
-import { pathToFileURL } from 'url';
 
 // Configure pdfjs worker for server-side (Node.js)
-// We disable canvas since we only need text extraction, not rendering
+// Use CDN version of worker for production reliability
 if (typeof window === 'undefined') {
-  // Server-side configuration
-  // Use the bundled worker from node_modules
-  // Construct the absolute path to the worker file
-  const workerPath = path.join(
-    process.cwd(),
-    'node_modules',
-    'pdfjs-dist',
-    'build',
-    'pdf.worker.min.mjs'
-  );
-  // Convert Windows path to file:// URL for ESM loader compatibility
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+  // Use CDN worker URL - works reliably in production environments like Vercel
+  // This avoids file path issues in serverless deployments
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
   // Disable canvas for Node.js environment (text extraction only)
   // This allows pdfjs-dist to work without the canvas native module
