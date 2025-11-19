@@ -22,6 +22,21 @@ export type ExtractionErrorType =
   | 'parsing_error'
   | 'unknown';
 
+// Phase 5: AI Summarization Types
+export type SummarizationStatus = 'pending' | 'summarizing' | 'completed' | 'failed';
+
+export type SummarizationErrorType =
+  | 'rate_limited'
+  | 'timeout'
+  | 'empty_content'
+  | 'api_error'
+  | 'invalid_response'
+  | 'parsing_error'
+  | 'model_error'
+  | 'connection_error'
+  | 'invalid_text'
+  | 'unknown';
+
 // Comment categories (will be detected by AI)
 export type CommentCategory =
   | 'Education'
@@ -318,6 +333,7 @@ export type CommentAnalysisResult = {
 export type ExtractionResult = {
   success: boolean;
   textUrl?: string;
+  extractedTextUrl?: string; // Also used for Inngest event payload
   pageCount?: number;
   charCount?: number;
   error?: string;
@@ -330,6 +346,30 @@ export type ExtractionEventPayload = {
   fileName: string;
   fileSize: number;
   fileUrl: string;
+};
+
+// Phase 5: AI Summarization Event Payload
+export type SummarizationEventPayload = {
+  documentId: string;
+  extractedTextUrl: string;
+  requestedBy?: string;
+};
+
+export type SummarizationResult = {
+  summary: string;
+  confidence: number;
+  modelVersion: string;
+  charCount: number;
+  chunkCount: number;
+  errors?: string[];
+};
+
+export type SummarizationChunk = {
+  text: string;
+  index: number;
+  startPos: number;
+  endPos: number;
+  tokenCount: number;
 };
 
 // ============================================================================
