@@ -128,7 +128,9 @@ export default inngest.createFunction(
       limit: 2,
     },
     // Timeout: 10 minutes for large documents
-    timeout: '10m',
+    timeouts: {
+      finish: '10m',
+    },
   },
   {
     event: 'document.extraction-completed',
