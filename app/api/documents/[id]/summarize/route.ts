@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { inngest, INNGEST_EVENTS } from '@/lib/inngest/client';
 
 export async function POST(
@@ -20,7 +20,7 @@ export async function POST(
     const { id: documentId } = await params;
 
     // Verify authentication
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,
