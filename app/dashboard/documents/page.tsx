@@ -10,7 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { ExtractionStatus, ExtractionErrorType } from '@/types';
+import SummaryModal from '@/components/dashboard/SummaryModal';
+import type { ExtractionStatus, ExtractionErrorType, SummarizationStatus, SummarizationErrorType } from '@/types';
 
 type Document = {
   id: string;
@@ -25,6 +26,11 @@ type Document = {
   extraction_error_type: ExtractionErrorType | null;
   extraction_page_count: number | null;
   extraction_char_count: number | null;
+  summarization_status: SummarizationStatus | null;
+  summary_en: string | null;
+  summary_error: string | null;
+  summary_error_type: SummarizationErrorType | null;
+  summary_confidence: number | null;
   uploader: {
     full_name: string | null;
     email: string;
@@ -40,6 +46,13 @@ export default function DocumentsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [summaryModal, setSummaryModal] = useState<{
+    isOpen: boolean;
+    document: Document | null;
+  }>({
+    isOpen: false,
+    document: null,
+  });
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -96,6 +109,11 @@ export default function DocumentsPage() {
                     extraction_error_type: payload.new.extraction_error_type,
                     extraction_page_count: payload.new.extraction_page_count,
                     extraction_char_count: payload.new.extraction_char_count,
+                    summarization_status: payload.new.summarization_status,
+                    summary_en: payload.new.summary_en,
+                    summary_error: payload.new.summary_error,
+                    summary_error_type: payload.new.summary_error_type,
+                    summary_confidence: payload.new.summary_confidence,
                     status: payload.new.status,
                   }
                 : doc
@@ -169,6 +187,97 @@ export default function DocumentsPage() {
     } finally {
       setRetrying(null);
     }
+  };
+
+  const handleOpenSummary = (document: Document) => {
+    setSummaryModal({
+      isOpen: true,
+      document,
+    });
+  };
+
+  const handleCloseSummary = () => {
+    setSummaryModal({
+      isOpen: false,
+      document: null,
+    });
+  };
+
+  const handleSaveSummary = (summary: string) => {
+    if (!summaryModal.document) return;
+
+    // Update local state with the new summary
+    setDocuments((prevDocs) =>
+      prevDocs.map((doc) =>
+        doc.id === summaryModal.document?.id
+          ? { ...doc, summary_en: summary }
+          : doc
+      )
+    );
+  };
+
+  const getSummarizationStatusBadge = (document: Document) => {
+    const status = document.summarization_status;
+
+    if (!status || status === 'pending') {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
+          ⏸️ Pending
+        </span>
+      );
+    }
+
+    if (status === 'summarizing') {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+          <svg className="h-3 w-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Summarizing
+        </span>
+      );
+    }
+
+    if (status === 'completed' && document.summary_en) {
+      const confidence = document.summary_confidence || 0;
+      const confidenceColor = confidence >= 0.8 ? 'green' : confidence >= 0.5 ? 'yellow' : 'orange';
+
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={`inline-flex items-center gap-1 rounded-full bg-${confidenceColor}-100 px-2 py-1 text-xs font-semibold text-${confidenceColor}-800 cursor-help`}>
+                ✓ Complete
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Confidence: {(confidence * 100).toFixed(0)}%</p>
+              <p className="text-xs text-gray-400">{document.summary_en?.substring(0, 100)}...</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    if (status === 'failed') {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800 cursor-help">
+                ✗ Failed
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs text-red-600">{document.summary_error || 'Summarization failed'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return null;
   };
 
   const getExtractionStatusBadge = (document: Document) => {
@@ -393,16 +502,16 @@ export default function DocumentsPage() {
             <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
                     Title
                   </th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                  <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
                     Extraction Status
                   </th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
-                    Size
+                  <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Summary Status
                   </th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                  <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
                     <button
                       onClick={handleSortToggle}
                       className="flex items-center gap-1 hover:text-gray-700"
@@ -425,7 +534,7 @@ export default function DocumentsPage() {
                       </svg>
                     </button>
                   </th>
-                  <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
+                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-6">
                     Actions
                   </th>
                 </tr>
@@ -448,6 +557,7 @@ export default function DocumentsPage() {
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-md">
                           <p className="font-medium">{document.title}</p>
+                          <p className="font-medium">{formatFileSize(document.file_size)}</p>
                           <p className="text-xs text-gray-400">
                             by{' '}
                             {document.uploader.full_name ||
@@ -459,8 +569,8 @@ export default function DocumentsPage() {
                     <td className="px-2 py-4 sm:px-4">
                       {getExtractionStatusBadge(document)}
                     </td>
-                    <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
-                      {formatFileSize(document.file_size)}
+                    <td className="px-2 py-4 sm:px-4">
+                      {getSummarizationStatusBadge(document)}
                     </td>
                     <td className="px-2 py-4 text-sm text-gray-500 sm:px-4">
                       {formatDateTime(document.created_at)}
@@ -484,6 +594,17 @@ export default function DocumentsPage() {
                           >
                             View Text
                           </Link>
+                        )}
+
+                        {/* View Summary button (only if summarization completed or can be manually added) */}
+                        {(document.summarization_status === 'completed' ||
+                          document.extraction_status === 'completed') && (
+                          <button
+                            onClick={() => handleOpenSummary(document)}
+                            className="text-purple-600 hover:text-purple-900"
+                          >
+                            {document.summary_en ? 'View Summary' : 'Add Summary'}
+                          </button>
                         )}
 
                         {/* Retry button (only if extraction failed) */}
@@ -512,6 +633,19 @@ export default function DocumentsPage() {
             </table>
           </div>
         </TooltipProvider>
+      )}
+
+      {/* Summary Modal */}
+      {summaryModal.document && (
+        <SummaryModal
+          documentId={summaryModal.document.id}
+          documentTitle={summaryModal.document.title}
+          initialSummary={summaryModal.document.summary_en}
+          confidence={summaryModal.document.summary_confidence}
+          isOpen={summaryModal.isOpen}
+          onClose={handleCloseSummary}
+          onSave={handleSaveSummary}
+        />
       )}
     </div>
   );

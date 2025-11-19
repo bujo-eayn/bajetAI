@@ -112,7 +112,16 @@ export type Database = {
           id: string
           processed: boolean
           status: string
+          summarization_status: string | null
+          summary_char_count: number | null
+          summary_completed_at: string | null
+          summary_confidence: number | null
+          summary_duration_ms: number | null
           summary_en: string | null
+          summary_error: string | null
+          summary_error_type: string | null
+          summary_model_version: string | null
+          summary_started_at: string | null
           summary_sw: string | null
           title: string
           updated_at: string
@@ -136,7 +145,16 @@ export type Database = {
           id?: string
           processed?: boolean
           status?: string
+          summarization_status?: string | null
+          summary_char_count?: number | null
+          summary_completed_at?: string | null
+          summary_confidence?: number | null
+          summary_duration_ms?: number | null
           summary_en?: string | null
+          summary_error?: string | null
+          summary_error_type?: string | null
+          summary_model_version?: string | null
+          summary_started_at?: string | null
           summary_sw?: string | null
           title: string
           updated_at?: string
@@ -160,7 +178,16 @@ export type Database = {
           id?: string
           processed?: boolean
           status?: string
+          summarization_status?: string | null
+          summary_char_count?: number | null
+          summary_completed_at?: string | null
+          summary_confidence?: number | null
+          summary_duration_ms?: number | null
           summary_en?: string | null
+          summary_error?: string | null
+          summary_error_type?: string | null
+          summary_model_version?: string | null
+          summary_started_at?: string | null
           summary_sw?: string | null
           title?: string
           updated_at?: string
