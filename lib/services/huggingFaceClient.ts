@@ -13,7 +13,7 @@
  * - Circuit breaker pattern for API failure scenarios
  */
 
-import { HfInference } from '@huggingface/inference';
+import { InferenceClient } from '@huggingface/inference';
 
 // Environment configuration
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
@@ -57,13 +57,13 @@ export class HuggingFaceError extends Error {
 /**
  * Initialize Hugging Face Inference client
  */
-function createClient(): HfInference {
+function createClient(): InferenceClient {
   if (!HF_API_KEY) {
     throw new Error(
       'HUGGING_FACE_API_KEY is not configured. Please add it to your environment variables.'
     );
   }
-  return new HfInference(HF_API_KEY);
+  return new InferenceClient(HF_API_KEY);
 }
 
 /**
@@ -243,12 +243,14 @@ export async function summarizeText(
 
       try {
         // Call Hugging Face API
+        // wait_for_model: true allows the API to load the model if it's cold
         const result = await client.summarization({
           model: 'facebook/bart-large-cnn',
           inputs: text,
           parameters: {
             max_length: maxLength,
             min_length: minLength,
+            wait_for_model: true,
           },
         });
 

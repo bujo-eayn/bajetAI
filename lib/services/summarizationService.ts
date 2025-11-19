@@ -241,6 +241,7 @@ async function summarizeChunk(
       maxLength: MAX_SUMMARY_LENGTH,
       minLength: MIN_SUMMARY_LENGTH,
       retries: 1, // Limited retries for individual chunks
+      timeout: 60000, // 60 seconds to allow for model cold start
     });
 
     return { summary };
@@ -291,6 +292,7 @@ export async function summarizeDocument(
           maxLength: MAX_SUMMARY_LENGTH,
           minLength: MIN_SUMMARY_LENGTH,
           retries: 2,
+          timeout: 60000, // 60 seconds to allow for model cold start
         });
 
         if (!validateSummary(summary, trimmedText)) {
@@ -372,6 +374,7 @@ export async function summarizeDocument(
           maxLength: MAX_SUMMARY_LENGTH,
           minLength: MIN_SUMMARY_LENGTH,
           retries: 2,
+          timeout: 60000, // 60 seconds to allow for model cold start
         });
 
         const confidence = chunkErrors.length > 0
