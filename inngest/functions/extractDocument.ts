@@ -55,11 +55,12 @@ export const extractDocument = inngest.createFunction(
           console.log(`Triggering summarization for document ${documentId}`);
 
           // Send event to trigger summarization
+          // TypeScript assertion: we've already verified extractedTextUrl exists in the if condition
           await inngest.send({
             name: INNGEST_EVENTS.EXTRACTION_COMPLETED,
             data: {
               documentId,
-              extractedTextUrl: result.extractedTextUrl,
+              extractedTextUrl: result.extractedTextUrl as string,
             },
           });
 
