@@ -10,7 +10,7 @@ export type DocumentStatus = 'processing' | 'published' | 'archived';
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected';
 
-export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'failed';
+export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'completed_scanned' | 'failed';
 
 export type ExtractionErrorType =
   | 'corrupt_file'
@@ -23,7 +23,7 @@ export type ExtractionErrorType =
   | 'unknown';
 
 // Phase 5: AI Summarization Types
-export type SummarizationStatus = 'pending' | 'summarizing' | 'completed' | 'failed';
+export type SummarizationStatus = 'pending' | 'summarizing' | 'completed' | 'failed' | 'skipped';
 
 export type SummarizationErrorType =
   | 'rate_limited'
@@ -339,6 +339,7 @@ export type ExtractionResult = {
   error?: string;
   errorType?: ExtractionErrorType;
   durationMs?: number;
+  isScanned?: boolean; // Phase 5b: Indicates if PDF is scanned
 };
 
 export type ExtractionEventPayload = {

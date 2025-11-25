@@ -24,6 +24,7 @@ type Document = {
   extraction_status: ExtractionStatus;
   extraction_error: string | null;
   extraction_error_type: ExtractionErrorType | null;
+  extraction_warning: string | null;
   extraction_page_count: number | null;
   extraction_char_count: number | null;
   summarization_status: SummarizationStatus | null;
@@ -189,6 +190,40 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleRetrySummarization = async (id: string) => {
+    if (!confirm('Retry summarization for this document?')) {
+      return;
+    }
+
+    try {
+      setRetrying(id);
+      const response = await fetch(`/api/documents/${id}/summarize/retry`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to retry summarization');
+      }
+
+      // Update local state to show pending status
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id
+            ? { ...doc, summarization_status: 'pending' as SummarizationStatus }
+            : doc
+        )
+      );
+
+      alert('Summarization retry queued successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to retry summarization');
+    } finally {
+      setRetrying(null);
+    }
+  };
+
   const handleOpenSummary = (document: Document) => {
     setSummaryModal({
       isOpen: true,
@@ -236,6 +271,23 @@ export default function DocumentsPage() {
           </svg>
           Summarizing
         </span>
+      );
+    }
+
+    if (status === 'skipped') {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 cursor-help">
+                ⊘ Skipped
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">{document.summary_error || 'Summarization skipped for this document'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
 
@@ -326,6 +378,24 @@ export default function DocumentsPage() {
             </TooltipTrigger>
             <TooltipContent>
               <p>
+                {document.extraction_page_count || 0} pages,{' '}
+                {document.extraction_char_count?.toLocaleString() || 0} chars
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      case 'completed_scanned':
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-default items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                ⚠️ Scanned PDF
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="font-semibold text-orange-600">Scanned Document Detected</p>
+              <p className="text-xs mt-1">{document.extraction_warning || 'Minimal text extracted. Document may contain images only.'}</p>
+              <p className="text-xs mt-1 text-gray-500">
                 {document.extraction_page_count || 0} pages,{' '}
                 {document.extraction_char_count?.toLocaleString() || 0} chars
               </p>
@@ -607,14 +677,26 @@ export default function DocumentsPage() {
                           </button>
                         )}
 
-                        {/* Retry button (only if extraction failed) */}
+                        {/* Retry extraction (only if extraction failed) */}
                         {document.extraction_status === 'failed' && (
                           <button
                             onClick={() => handleRetryExtraction(document.id)}
                             disabled={retrying === document.id}
                             className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
                           >
-                            {retrying === document.id ? 'Retrying...' : 'Retry'}
+                            {retrying === document.id ? 'Retrying...' : 'Retry Extraction'}
+                          </button>
+                        )}
+
+                        {/* Retry summarization (only if summarization failed and extraction succeeded) */}
+                        {document.summarization_status === 'failed' &&
+                         document.extraction_status === 'completed' && (
+                          <button
+                            onClick={() => handleRetrySummarization(document.id)}
+                            disabled={retrying === document.id}
+                            className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                          >
+                            {retrying === document.id ? 'Retrying...' : 'Retry Summary'}
                           </button>
                         )}
 

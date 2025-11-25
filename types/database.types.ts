@@ -105,12 +105,15 @@ export type Database = {
           extraction_page_count: number | null
           extraction_started_at: string | null
           extraction_status: string | null
+          extraction_warning: string | null
           file_name: string
           file_path: string | null
           file_size: number | null
           file_url: string
           id: string
           processed: boolean
+          progress_percent: number | null
+          progress_status: string | null
           status: string
           summarization_status: string | null
           summary_char_count: number | null
@@ -138,12 +141,15 @@ export type Database = {
           extraction_page_count?: number | null
           extraction_started_at?: string | null
           extraction_status?: string | null
+          extraction_warning?: string | null
           file_name: string
           file_path?: string | null
           file_size?: number | null
           file_url: string
           id?: string
           processed?: boolean
+          progress_percent?: number | null
+          progress_status?: string | null
           status?: string
           summarization_status?: string | null
           summary_char_count?: number | null
@@ -171,12 +177,15 @@ export type Database = {
           extraction_page_count?: number | null
           extraction_started_at?: string | null
           extraction_status?: string | null
+          extraction_warning?: string | null
           file_name?: string
           file_path?: string | null
           file_size?: number | null
           file_url?: string
           id?: string
           processed?: boolean
+          progress_percent?: number | null
+          progress_status?: string | null
           status?: string
           summarization_status?: string | null
           summary_char_count?: number | null
