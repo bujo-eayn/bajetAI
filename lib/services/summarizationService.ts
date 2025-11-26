@@ -13,6 +13,7 @@
  */
 
 import { summarizeText, HuggingFaceError } from './huggingFaceClient';
+import { summarizeWithOpenAI, isOpenAIAvailable } from './openaiClient';
 
 // Chunking configuration
 const CHUNK_SIZE_TOKENS = 1024; // ~4000 characters
@@ -24,8 +25,8 @@ const CHARS_PER_TOKEN = 4; // Approximate ratio
 // Summarization configuration
 const MAX_SUMMARY_LENGTH = 600; // tokens (~600 characters)
 const MIN_SUMMARY_LENGTH = 200; // tokens (~200 characters)
-const BATCH_SIZE = 5; // Process 5 chunks concurrently
-const BATCH_DELAY_MS = 500; // Delay between batches
+const BATCH_SIZE = 3; // Process 3 chunks concurrently (reduced from 5 to avoid rate limits)
+const BATCH_DELAY_MS = 2000; // 2 second delay between batches (increased from 500ms)
 
 // Multi-level summarization thresholds
 const LARGE_DOC_THRESHOLD = 50; // chunks
@@ -192,7 +193,8 @@ export function combineChunkSummaries(chunkSummaries: string[]): string {
 }
 
 /**
- * Create fallback extractive summary using first N sentences
+ * Create fallback extractive summary using intelligent sentence selection
+ * Improved to select diverse sentences from throughout the document
  */
 function createFallbackSummary(text: string, targetLength: number = 600): string {
   // Split into sentences
@@ -205,16 +207,44 @@ function createFallbackSummary(text: string, targetLength: number = 600): string
     return text.substring(0, targetLength).trim() + '...';
   }
 
-  // Take first N sentences until we reach target length
-  let summary = '';
-  for (const sentence of sentences) {
-    if (summary.length + sentence.length > targetLength) {
+  // Improved: Take sentences from beginning, middle, and end for better coverage
+  const selectedSentences: string[] = [];
+  let totalLength = 0;
+
+  // Select 40% from beginning (key introductory info)
+  const beginSentences = sentences.slice(0, Math.ceil(sentences.length * 0.2));
+
+  // Select 40% from middle (core content)
+  const midStart = Math.floor(sentences.length * 0.4);
+  const midEnd = Math.ceil(sentences.length * 0.6);
+  const middleSentences = sentences.slice(midStart, midEnd);
+
+  // Select 20% from end (conclusions)
+  const endSentences = sentences.slice(-Math.ceil(sentences.length * 0.1));
+
+  // Combine with preference for key sentences (containing numbers, "total", "budget", etc.)
+  const allCandidates = [...beginSentences, ...middleSentences, ...endSentences];
+  const keywordPattern = /\b(budget|total|allocation|million|billion|ksh|key|priority|objective)\b/i;
+
+  // Prioritize sentences with keywords
+  const prioritizedSentences = allCandidates.sort((a, b) => {
+    const aHasKeyword = keywordPattern.test(a) ? 1 : 0;
+    const bHasKeyword = keywordPattern.test(b) ? 1 : 0;
+    return bHasKeyword - aHasKeyword;
+  });
+
+  // Build summary until target length
+  for (const sentence of prioritizedSentences) {
+    if (totalLength + sentence.length + 2 > targetLength) {
       break;
     }
-    summary += sentence + '. ';
+    selectedSentences.push(sentence);
+    totalLength += sentence.length + 2; // +2 for ". "
   }
 
-  return summary.trim() || sentences[0] + '.';
+  return selectedSentences.length > 0
+    ? selectedSentences.join('. ') + '.'
+    : sentences[0] + '.';
 }
 
 /**
@@ -230,13 +260,14 @@ function sleep(ms: number): Promise<void> {
 async function summarizeChunk(
   chunk: SummarizationChunk,
   totalChunks: number
-): Promise<{ summary: string; error?: string }> {
+): Promise<{ summary: string; error?: string; usedOpenAI?: boolean }> {
   try {
     console.log(
       `[Summarization] Processing chunk ${chunk.index + 1}/${totalChunks} ` +
       `(${chunk.tokenCount} tokens, ${chunk.text.length} chars)`
     );
 
+    // Try HuggingFace first
     const summary = await summarizeText(chunk.text, {
       maxLength: MAX_SUMMARY_LENGTH,
       minLength: MIN_SUMMARY_LENGTH,
@@ -244,17 +275,39 @@ async function summarizeChunk(
       timeout: 60000, // 60 seconds to allow for model cold start
     });
 
-    return { summary };
+    return { summary, usedOpenAI: false };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(
-      `[Summarization] Failed to summarize chunk ${chunk.index + 1}:`,
+      `[Summarization] HuggingFace failed for chunk ${chunk.index + 1}:`,
       errorMessage
     );
 
+    // Try OpenAI as backup if available
+    if (isOpenAIAvailable()) {
+      try {
+        console.log(`[Summarization] Trying OpenAI fallback for chunk ${chunk.index + 1}`);
+        const result = await summarizeWithOpenAI(chunk.text, {
+          maxLength: Math.floor(MAX_SUMMARY_LENGTH / 2), // Convert tokens to words
+          minLength: Math.floor(MIN_SUMMARY_LENGTH / 2),
+          timeout: 30000,
+        });
+        console.log(`[Summarization] OpenAI fallback succeeded for chunk ${chunk.index + 1}`);
+        return { summary: result.summary, usedOpenAI: true };
+      } catch (openAIError) {
+        console.error(
+          `[Summarization] OpenAI fallback also failed for chunk ${chunk.index + 1}:`,
+          openAIError instanceof Error ? openAIError.message : String(openAIError)
+        );
+      }
+    }
+
+    // Final fallback: extractive summary
+    console.log(`[Summarization] Using extractive fallback for chunk ${chunk.index + 1}`);
     return {
       summary: createFallbackSummary(chunk.text, 200), // Shorter fallback for chunks
       error: errorMessage,
+      usedOpenAI: false,
     };
   }
 }

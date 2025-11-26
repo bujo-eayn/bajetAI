@@ -10,7 +10,13 @@
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:types": "npx supabase gen types typescript --project-id uugujlvezpminoxlsevo > types/database.types.ts"
+    "db:types": "npx supabase gen types typescript --project-id uugujlvezpminoxlsevo > types/database.types.ts",
+    "logs:inngest": "echo 'Inngest Dashboard: http://localhost:8288' && npm run dev",
+    "logs:vercel": "vercel logs --follow",
+    "health:db": "curl http://localhost:3000/api/health",
+    "health:hf": "curl http://localhost:3000/api/health/huggingface",
+    "health:rate-limit": "curl http://localhost:3000/api/health/huggingface/rate-limit",
+    "monitor": "npm run logs:inngest"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",
@@ -28,6 +34,7 @@
     "inngest": "^3.22.12",
     "lucide-react": "^0.552.0",
     "next": "^15.0.3",
+    "openai": "^6.9.1",
     "pdfjs-dist": "^4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
