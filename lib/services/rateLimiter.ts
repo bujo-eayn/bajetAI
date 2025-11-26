@@ -1,5 +1,6 @@
-// Rate Limiter Service for HuggingFace API
-// Tracks API call count to prevent exceeding free tier limits (24k requests/month ~800/day)
+// Multi-Provider Rate Limiter Service
+// Tracks API call count to prevent exceeding daily limits for each provider
+// Supports: OpenAI, HuggingFace, and future providers
 
 type RateLimitConfig = {
   dailyLimit: number;
@@ -15,23 +16,70 @@ type RateLimitState = {
 // Note: This resets on server restart. For production, consider Redis or persistent storage.
 const rateLimitState: Map<string, RateLimitState> = new Map();
 
-/**
- * Get rate limiter configuration from environment or defaults
- */
-function getConfig(): RateLimitConfig {
-  const dailyLimit = parseInt(
-    process.env.HUGGING_FACE_DAILY_LIMIT || '800',
-    10
-  );
-  const resetHour = parseInt(
-    process.env.HUGGING_FACE_RESET_HOUR || '0',
-    10
-  );
+// Service-specific configurations
+const serviceConfigs: Map<string, RateLimitConfig> = new Map();
 
-  return {
+/**
+ * Get rate limiter configuration for a specific service
+ *
+ * @param service - Service name ('openai', 'huggingface', etc.)
+ * @returns Configuration with dailyLimit and resetHour
+ */
+function getConfig(service: string = 'huggingface'): RateLimitConfig {
+  // Return cached config if available
+  if (serviceConfigs.has(service)) {
+    return serviceConfigs.get(service)!;
+  }
+
+  // Load config from environment variables
+  let dailyLimit: number;
+  let resetHour: number;
+
+  switch (service.toLowerCase()) {
+    case 'openai':
+      dailyLimit = parseInt(
+        process.env.OPENAI_DAILY_LIMIT || '100',
+        10
+      );
+      resetHour = parseInt(
+        process.env.OPENAI_RESET_HOUR || '0',
+        10
+      );
+      break;
+
+    case 'huggingface':
+      dailyLimit = parseInt(
+        process.env.HUGGING_FACE_DAILY_LIMIT || '800',
+        10
+      );
+      resetHour = parseInt(
+        process.env.HUGGING_FACE_RESET_HOUR || '0',
+        10
+      );
+      break;
+
+    default:
+      // Default configuration for unknown services
+      dailyLimit = 100;
+      resetHour = 0;
+      console.warn(
+        `[RateLimiter] Unknown service "${service}", using default config (100 calls/day)`
+      );
+  }
+
+  const config: RateLimitConfig = {
     dailyLimit,
     resetHour,
   };
+
+  // Cache the config
+  serviceConfigs.set(service, config);
+
+  console.log(
+    `[RateLimiter] Initialized ${service}: ${dailyLimit} calls/day, reset at ${resetHour}:00 UTC`
+  );
+
+  return config;
 }
 
 /**
@@ -56,7 +104,7 @@ function getNextResetTime(resetHour: number): Date {
  * Initialize or get rate limit state for a service
  */
 function getState(service: string = 'huggingface'): RateLimitState {
-  const config = getConfig();
+  const config = getConfig(service);
   const existing = rateLimitState.get(service);
 
   // Check if existing state is still valid (not past reset time)
@@ -87,7 +135,7 @@ export function checkRateLimit(
   current: number;
   limit: number;
 } {
-  const config = getConfig();
+  const config = getConfig(service);
   const state = getState(service);
 
   const allowed = state.count < config.dailyLimit;
@@ -113,7 +161,7 @@ export function incrementRateLimit(service: string = 'huggingface'): void {
   console.log(`[RateLimiter] ${service}: ${state.count} calls today`);
 
   // Log warning when approaching limit
-  const config = getConfig();
+  const config = getConfig(service);
   const percentUsed = (state.count / config.dailyLimit) * 100;
 
   if (percentUsed >= 90) {
@@ -132,7 +180,7 @@ export function incrementRateLimit(service: string = 'huggingface'): void {
  * Useful for testing or manual intervention
  */
 export function resetRateLimit(service: string = 'huggingface'): void {
-  const config = getConfig();
+  const config = getConfig(service);
   rateLimitState.set(service, {
     count: 0,
     resetAt: getNextResetTime(config.resetHour),
@@ -153,7 +201,7 @@ export function getRateLimitStats(service: string = 'huggingface'): {
   resetAt: Date;
   timeUntilReset: number; // milliseconds
 } {
-  const config = getConfig();
+  const config = getConfig(service);
   const state = getState(service);
 
   const remaining = Math.max(0, config.dailyLimit - state.count);

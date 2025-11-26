@@ -85,3 +85,6 @@ MONITORING_SETUP.md
 toDo
 
 .env.sentry-build-plugin
+
+OPENAI_MIGRATION_PLAN.md
+OPENAI_MIGRATION_COMPLETE.md
