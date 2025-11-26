@@ -88,10 +88,10 @@ export default function UploadPage() {
       setFile(null);
       setTitle('');
 
-      // Redirect to documents list after 2 seconds
+      // Redirect to documents list after 1 second
       setTimeout(() => {
         router.push('/dashboard/documents');
-      }, 2000);
+      }, 1000);
     } catch (err: any) {
       setError(err.message || 'Failed to upload document');
     } finally {

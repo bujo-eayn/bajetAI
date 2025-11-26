@@ -363,6 +363,11 @@ export type SummarizationResult = {
   charCount: number;
   chunkCount: number;
   errors?: string[];
+  // OpenAI Migration - Phase 7: Add provider tracking
+  provider?: string;
+  tokensUsed?: TokenUsage;
+  targetLength?: number;
+  actualLength?: number;
 };
 
 export type SummarizationChunk = {
@@ -374,7 +379,34 @@ export type SummarizationChunk = {
 };
 
 // ============================================================================
+// OpenAI Migration - Phase 6: Multi-Provider Types
+// ============================================================================
+
+/**
+ * Token usage statistics from AI providers (primarily OpenAI)
+ * Stored in documents.summary_tokens_used JSONB field
+ */
+export type TokenUsage = {
+  input: number;
+  output: number;
+  total: number;
+  model?: string;
+};
+
+/**
+ * AI provider types
+ */
+export type AIProvider = 'openai' | 'huggingface' | 'extractive' | 'unknown';
+
+// ============================================================================
 // NOTE: After running database migrations, regenerate types with:
 // npm run db:types
 // This will create types/database.types.ts with accurate schema
+//
+// Migration 008 adds:
+// - summary_provider: TEXT (openai | huggingface | extractive | unknown)
+// - summary_tokens_used: JSONB (TokenUsage structure)
+// - summary_target_length: INTEGER (calculated 10% target)
+// - summary_actual_length: INTEGER (actual word count)
+// - summary_coverage_percent: NUMERIC (actual/target * 100)
 // ============================================================================
