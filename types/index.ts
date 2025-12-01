@@ -356,6 +356,12 @@ export type SummarizationEventPayload = {
   requestedBy?: string;
 };
 
+// Phase 6: Translation Event Payload
+export type TranslationEventPayload = {
+  documentId: string;
+  englishSummary: string;
+};
+
 export type SummarizationResult = {
   summary: string;
   confidence: number;
