@@ -292,6 +292,22 @@ export default inngest.createFunction(
       console.log(`[Summarization] ✓ Successfully saved summary for document ${documentId}`);
     });
 
+    // Step 6: Trigger translation
+    await step.run('trigger-translation', async () => {
+      console.log(`[Summarization] Triggering translation for document ${documentId}`);
+
+      // Send Inngest event to trigger translation
+      await inngest.send({
+        name: 'document.summarization-completed',
+        data: {
+          documentId,
+          englishSummary: result.summary,
+        },
+      });
+
+      console.log(`[Summarization] ✓ Translation queued for document ${documentId}`);
+    });
+
     return {
       documentId,
       success: true,

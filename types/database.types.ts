@@ -116,17 +116,36 @@ export type Database = {
           progress_status: string | null
           status: string
           summarization_status: string | null
+          summary_actual_length: number | null
           summary_char_count: number | null
           summary_completed_at: string | null
           summary_confidence: number | null
+          summary_coverage_percent: number | null
           summary_duration_ms: number | null
           summary_en: string | null
           summary_error: string | null
           summary_error_type: string | null
           summary_model_version: string | null
+          summary_provider: string | null
           summary_started_at: string | null
           summary_sw: string | null
+          summary_target_length: number | null
+          summary_tokens_used: Json | null
           title: string
+          translation_completed_at: string | null
+          translation_confidence: number | null
+          translation_duration_ms: number | null
+          translation_error: string | null
+          translation_error_type: string | null
+          translation_model_version: string | null
+          translation_output_chars: number | null
+          translation_output_words: number | null
+          translation_provider: string | null
+          translation_source_chars: number | null
+          translation_source_words: number | null
+          translation_started_at: string | null
+          translation_status: string | null
+          translation_tokens_used: Json | null
           updated_at: string
           uploaded_by: string
         }
@@ -152,17 +171,36 @@ export type Database = {
           progress_status?: string | null
           status?: string
           summarization_status?: string | null
+          summary_actual_length?: number | null
           summary_char_count?: number | null
           summary_completed_at?: string | null
           summary_confidence?: number | null
+          summary_coverage_percent?: number | null
           summary_duration_ms?: number | null
           summary_en?: string | null
           summary_error?: string | null
           summary_error_type?: string | null
           summary_model_version?: string | null
+          summary_provider?: string | null
           summary_started_at?: string | null
           summary_sw?: string | null
+          summary_target_length?: number | null
+          summary_tokens_used?: Json | null
           title: string
+          translation_completed_at?: string | null
+          translation_confidence?: number | null
+          translation_duration_ms?: number | null
+          translation_error?: string | null
+          translation_error_type?: string | null
+          translation_model_version?: string | null
+          translation_output_chars?: number | null
+          translation_output_words?: number | null
+          translation_provider?: string | null
+          translation_source_chars?: number | null
+          translation_source_words?: number | null
+          translation_started_at?: string | null
+          translation_status?: string | null
+          translation_tokens_used?: Json | null
           updated_at?: string
           uploaded_by: string
         }
@@ -188,17 +226,36 @@ export type Database = {
           progress_status?: string | null
           status?: string
           summarization_status?: string | null
+          summary_actual_length?: number | null
           summary_char_count?: number | null
           summary_completed_at?: string | null
           summary_confidence?: number | null
+          summary_coverage_percent?: number | null
           summary_duration_ms?: number | null
           summary_en?: string | null
           summary_error?: string | null
           summary_error_type?: string | null
           summary_model_version?: string | null
+          summary_provider?: string | null
           summary_started_at?: string | null
           summary_sw?: string | null
+          summary_target_length?: number | null
+          summary_tokens_used?: Json | null
           title?: string
+          translation_completed_at?: string | null
+          translation_confidence?: number | null
+          translation_duration_ms?: number | null
+          translation_error?: string | null
+          translation_error_type?: string | null
+          translation_model_version?: string | null
+          translation_output_chars?: number | null
+          translation_output_words?: number | null
+          translation_provider?: string | null
+          translation_source_chars?: number | null
+          translation_source_words?: number | null
+          translation_started_at?: string | null
+          translation_status?: string | null
+          translation_tokens_used?: Json | null
           updated_at?: string
           uploaded_by?: string
         }

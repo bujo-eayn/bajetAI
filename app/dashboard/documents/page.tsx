@@ -29,9 +29,12 @@ type Document = {
   extraction_char_count: number | null;
   summarization_status: SummarizationStatus | null;
   summary_en: string | null;
+  summary_sw: string | null;
   summary_error: string | null;
   summary_error_type: SummarizationErrorType | null;
   summary_confidence: number | null;
+  translation_status: string | null;
+  translation_confidence: number | null;
   uploader: {
     full_name: string | null;
     email: string;
@@ -723,10 +726,14 @@ export default function DocumentsPage() {
           documentId={summaryModal.document.id}
           documentTitle={summaryModal.document.title}
           initialSummary={summaryModal.document.summary_en}
+          swahiliSummary={summaryModal.document.summary_sw}
           confidence={summaryModal.document.summary_confidence}
+          translationStatus={summaryModal.document.translation_status || undefined}
+          translationConfidence={summaryModal.document.translation_confidence}
           isOpen={summaryModal.isOpen}
           onClose={handleCloseSummary}
           onSave={handleSaveSummary}
+          onRetranslate={fetchDocuments}
         />
       )}
     </div>
