@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { id: documentId } = await params;
 
     // 1. Authenticate user
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: documentId } = await params;
 
     // 1. Authenticate user
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,
