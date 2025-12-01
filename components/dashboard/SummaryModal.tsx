@@ -148,7 +148,7 @@ export default function SummaryModal({
           <DialogTitle>Document Summary</DialogTitle>
           <DialogDescription className="space-y-2">
             <div className="font-medium text-gray-900">{documentTitle}</div>
-            {currentConfidence !== null && (
+            {currentConfidence !== null && currentConfidence !== undefined && (
               <div className="text-sm text-gray-500">
                 AI Confidence: {(currentConfidence * 100).toFixed(0)}%
                 {currentConfidence < 0.8 && (

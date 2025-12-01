@@ -19,6 +19,27 @@ interface TranslationEventPayload {
   englishSummary: string;
 }
 
+type TranslationResultSuccess = {
+  success: true;
+  translatedText: string;
+  confidence: number;
+  sourceChars: number;
+  outputChars: number;
+  sourceWords: number;
+  outputWords: number;
+  modelVersion: string;
+  durationMs: number;
+};
+
+type TranslationResultError = {
+  success: false;
+  error: string;
+  errorType: string;
+  durationMs: number;
+};
+
+type TranslationResult = TranslationResultSuccess | TranslationResultError;
+
 // Main translation function
 export const translateDocument = inngest.createFunction(
   {
@@ -141,7 +162,7 @@ export const translateDocument = inngest.createFunction(
     });
 
     // Step 3: Perform translation
-    const translationResult = await step.run('translate-text', async () => {
+    const translationResult = await step.run('translate-text', async (): Promise<TranslationResult> => {
       const summaryToTranslate = englishSummary || document.summary_en!;
       const startTime = Date.now();
 
@@ -162,12 +183,12 @@ export const translateDocument = inngest.createFunction(
         );
 
         return {
-          success: true,
+          success: true as const,
           translatedText: result.translatedText,
           confidence: result.confidence,
           sourceChars: summaryToTranslate.length,
           outputChars: result.characterCount,
-          sourceWords: summaryToTranslate.split(/\s+/).filter((w) => w.length > 0).length,
+          sourceWords: summaryToTranslate.split(/\s+/).filter((w: string) => w.length > 0).length,
           outputWords: result.wordCount,
           modelVersion: result.modelVersion,
           durationMs,
@@ -184,7 +205,7 @@ export const translateDocument = inngest.createFunction(
         const errorType = classifyTranslationError(errorMessage);
 
         return {
-          success: false,
+          success: false as const,
           error: errorMessage,
           errorType,
           durationMs,
