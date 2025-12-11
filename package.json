@@ -10,7 +10,13 @@
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:types": "npx supabase gen types typescript --project-id uugujlvezpminoxlsevo > types/database.types.ts"
+    "db:types": "npx supabase gen types typescript --project-id uugujlvezpminoxlsevo > types/database.types.ts",
+    "logs:inngest": "echo 'Inngest Dashboard: http://localhost:8288' && npm run dev",
+    "logs:vercel": "vercel logs --follow",
+    "health:db": "curl http://localhost:3000/api/health",
+    "health:hf": "curl http://localhost:3000/api/health/huggingface",
+    "health:rate-limit": "curl http://localhost:3000/api/health/huggingface/rate-limit",
+    "monitor": "npm run logs:inngest"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",
@@ -20,6 +26,7 @@
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.78.0",
@@ -27,16 +34,19 @@
     "clsx": "^2.1.1",
     "inngest": "^3.22.12",
     "lucide-react": "^0.552.0",
-    "next": "^15.0.3",
+    "next": "^16.0.8",
+    "openai": "^6.9.1",
     "pdfjs-dist": "^4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "supabase": "^2.8.5",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "unpdf": "^1.4.0"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",

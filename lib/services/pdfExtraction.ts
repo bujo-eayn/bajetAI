@@ -197,6 +197,7 @@ export async function extractTextFromPDF(
       .single();
 
     if (docError || !document) {
+      console.error('Document not found:', { documentId, error: docError });
       return {
         success: false,
         error: 'Document not found',
@@ -210,12 +211,23 @@ export async function extractTextFromPDF(
       .update({
         extraction_status: 'extracting',
         extraction_started_at: new Date().toISOString(),
+        progress_status: 'Downloading PDF from storage...',
+        progress_percent: 10,
       })
       .eq('id', documentId);
 
     // 3. Download PDF from storage
     console.log(`Downloading PDF: ${document.file_name}`);
     const pdfBuffer = await downloadPDFFromStorage(document.file_name);
+
+    // Update progress: download complete
+    await supabase
+      .from('documents')
+      .update({
+        progress_status: 'Extracting text from PDF...',
+        progress_percent: 40,
+      })
+      .eq('id', documentId);
 
     // 4. Extract text using unpdf
     console.log(`Extracting text from PDF...`);
@@ -231,39 +243,93 @@ export async function extractTextFromPDF(
       };
     }
 
+    // 5a. Detect scanned PDFs (low char-to-page ratio indicates likely scanned)
+    const charsPerPage = text.length / pageCount;
+    const isLikelyScanned = charsPerPage < 50; // Less than 50 chars per page = likely scanned
+
+    // Update progress: extraction complete, saving
+    await supabase
+      .from('documents')
+      .update({
+        progress_status: 'Saving extracted text...',
+        progress_percent: 80,
+      })
+      .eq('id', documentId);
+
     // 6. Save extracted text to storage
     console.log(`Saving extracted text (${text.length} characters)...`);
     const textUrl = await saveExtractedText(documentId, text);
 
     // 7. Update database with success
     const durationMs = Date.now() - startTime;
-    await supabase
-      .from('documents')
-      .update({
-        extraction_status: 'completed',
-        extracted_text_url: textUrl,
-        extraction_page_count: pageCount,
-        extraction_char_count: text.length,
-        extraction_completed_at: new Date().toISOString(),
-        extraction_duration_ms: durationMs,
-        extraction_error: null,
-        extraction_error_type: null,
-        processed: true,
-      })
-      .eq('id', documentId);
 
-    console.log(
-      `Extraction completed: ${pageCount} pages, ${text.length} chars, ${durationMs}ms`
-    );
+    if (isLikelyScanned) {
+      // Mark as completed_scanned with warning
+      await supabase
+        .from('documents')
+        .update({
+          extraction_status: 'completed_scanned',
+          extracted_text_url: textUrl,
+          extraction_page_count: pageCount,
+          extraction_char_count: text.length,
+          extraction_completed_at: new Date().toISOString(),
+          extraction_duration_ms: durationMs,
+          extraction_warning: 'Scanned PDF - Minimal text extracted. Document may contain images only. Consider OCR processing for better results.',
+          extraction_error: null,
+          extraction_error_type: null,
+          processed: true,
+          progress_status: null,
+          progress_percent: 100,
+        })
+        .eq('id', documentId);
 
-    return {
-      success: true,
-      textUrl,
-      extractedTextUrl: textUrl, // Also include as extractedTextUrl for Inngest event
-      pageCount,
-      charCount: text.length,
-      durationMs,
-    };
+      console.log(
+        `Extraction completed (SCANNED): ${pageCount} pages, ${text.length} chars (${charsPerPage.toFixed(1)} chars/page), ${durationMs}ms`
+      );
+
+      return {
+        success: true,
+        textUrl,
+        extractedTextUrl: textUrl,
+        pageCount,
+        charCount: text.length,
+        durationMs,
+        isScanned: true,
+      };
+    } else {
+      // Normal extraction
+      await supabase
+        .from('documents')
+        .update({
+          extraction_status: 'completed',
+          extracted_text_url: textUrl,
+          extraction_page_count: pageCount,
+          extraction_char_count: text.length,
+          extraction_completed_at: new Date().toISOString(),
+          extraction_duration_ms: durationMs,
+          extraction_warning: null,
+          extraction_error: null,
+          extraction_error_type: null,
+          processed: true,
+          progress_status: null,
+          progress_percent: 100,
+        })
+        .eq('id', documentId);
+
+      console.log(
+        `Extraction completed: ${pageCount} pages, ${text.length} chars (${charsPerPage.toFixed(1)} chars/page), ${durationMs}ms`
+      );
+
+      return {
+        success: true,
+        textUrl,
+        extractedTextUrl: textUrl,
+        pageCount,
+        charCount: text.length,
+        durationMs,
+        isScanned: false,
+      };
+    }
   } catch (error) {
     const durationMs = Date.now() - startTime;
     const { errorType, message } = classifyError(error as Error);

@@ -44,13 +44,33 @@ export const extractDocument = inngest.createFunction(
         pageCount: result.pageCount,
         charCount: result.charCount,
         durationMs: result.durationMs,
+        isScanned: result.isScanned,
       });
 
       // Step 2: Trigger summarization if extraction succeeded and has sufficient text
-      // Only trigger if we have meaningful content (>100 characters)
-      const shouldSummarize = result.charCount && result.charCount > 100;
+      // Skip summarization for scanned PDFs (they will have minimal/no text)
+      const isScannedPDF = result.isScanned === true;
+      const shouldSummarize = !isScannedPDF && result.charCount && result.charCount > 100;
 
-      if (shouldSummarize && result.extractedTextUrl) {
+      if (isScannedPDF) {
+        // Skip summarization for scanned PDFs
+        await step.run('skip-summarization-scanned', async () => {
+          console.log(`Skipping summarization for scanned PDF: ${documentId}`);
+
+          // Update database to mark summarization as skipped
+          const { createAdminClient } = await import('@/lib/supabase/server');
+          const supabase = createAdminClient();
+
+          await supabase
+            .from('documents')
+            .update({
+              summarization_status: 'skipped',
+              summary_error: 'Scanned PDF with minimal text - summarization not applicable',
+              summary_error_type: 'empty_content',
+            })
+            .eq('id', documentId);
+        });
+      } else if (shouldSummarize && result.extractedTextUrl) {
         await step.run('trigger-summarization', async () => {
           console.log(`Triggering summarization for document ${documentId}`);
 

@@ -8,9 +8,11 @@ export type UserRole = 'official' | 'public';
 
 export type DocumentStatus = 'processing' | 'published' | 'archived';
 
+export type DocumentCategory = 'budgeting' | 'planning' | 'healthcare' | 'education' | 'transport';
+
 export type CommentStatus = 'pending' | 'approved' | 'rejected';
 
-export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'failed';
+export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'completed_scanned' | 'failed';
 
 export type ExtractionErrorType =
   | 'corrupt_file'
@@ -23,7 +25,7 @@ export type ExtractionErrorType =
   | 'unknown';
 
 // Phase 5: AI Summarization Types
-export type SummarizationStatus = 'pending' | 'summarizing' | 'completed' | 'failed';
+export type SummarizationStatus = 'pending' | 'summarizing' | 'completed' | 'failed' | 'skipped';
 
 export type SummarizationErrorType =
   | 'rate_limited'
@@ -95,6 +97,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           status: DocumentStatus;
+          category: DocumentCategory | null;
           extracted_text: string | null;
           summary_en: string | null;
           summary_sw: string | null;
@@ -119,6 +122,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           status?: DocumentStatus;
+          category?: DocumentCategory | null;
           extracted_text?: string | null;
           summary_en?: string | null;
           summary_sw?: string | null;
@@ -143,6 +147,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           status?: DocumentStatus;
+          category?: DocumentCategory | null;
           extracted_text?: string | null;
           summary_en?: string | null;
           summary_sw?: string | null;
@@ -339,6 +344,7 @@ export type ExtractionResult = {
   error?: string;
   errorType?: ExtractionErrorType;
   durationMs?: number;
+  isScanned?: boolean; // Phase 5b: Indicates if PDF is scanned
 };
 
 export type ExtractionEventPayload = {
@@ -355,6 +361,12 @@ export type SummarizationEventPayload = {
   requestedBy?: string;
 };
 
+// Phase 6: Translation Event Payload
+export type TranslationEventPayload = {
+  documentId: string;
+  englishSummary: string;
+};
+
 export type SummarizationResult = {
   summary: string;
   confidence: number;
@@ -362,6 +374,11 @@ export type SummarizationResult = {
   charCount: number;
   chunkCount: number;
   errors?: string[];
+  // OpenAI Migration - Phase 7: Add provider tracking
+  provider?: string;
+  tokensUsed?: TokenUsage;
+  targetLength?: number;
+  actualLength?: number;
 };
 
 export type SummarizationChunk = {
@@ -373,7 +390,34 @@ export type SummarizationChunk = {
 };
 
 // ============================================================================
+// OpenAI Migration - Phase 6: Multi-Provider Types
+// ============================================================================
+
+/**
+ * Token usage statistics from AI providers (primarily OpenAI)
+ * Stored in documents.summary_tokens_used JSONB field
+ */
+export type TokenUsage = {
+  input: number;
+  output: number;
+  total: number;
+  model?: string;
+};
+
+/**
+ * AI provider types
+ */
+export type AIProvider = 'openai' | 'huggingface' | 'extractive' | 'unknown';
+
+// ============================================================================
 // NOTE: After running database migrations, regenerate types with:
 // npm run db:types
 // This will create types/database.types.ts with accurate schema
+//
+// Migration 008 adds:
+// - summary_provider: TEXT (openai | huggingface | extractive | unknown)
+// - summary_tokens_used: JSONB (TokenUsage structure)
+// - summary_target_length: INTEGER (calculated 10% target)
+// - summary_actual_length: INTEGER (actual word count)
+// - summary_coverage_percent: NUMERIC (actual/target * 100)
 // ============================================================================

@@ -10,8 +10,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import SummaryModal from '@/components/dashboard/SummaryModal';
-import type { ExtractionStatus, ExtractionErrorType, SummarizationStatus, SummarizationErrorType } from '@/types';
+import type { ExtractionStatus, ExtractionErrorType, SummarizationStatus, SummarizationErrorType, DocumentCategory } from '@/types';
 
 type Document = {
   id: string;
@@ -20,17 +21,22 @@ type Document = {
   file_size: number;
   file_url: string;
   status: string;
+  category: DocumentCategory | null;
   created_at: string;
   extraction_status: ExtractionStatus;
   extraction_error: string | null;
   extraction_error_type: ExtractionErrorType | null;
+  extraction_warning: string | null;
   extraction_page_count: number | null;
   extraction_char_count: number | null;
   summarization_status: SummarizationStatus | null;
   summary_en: string | null;
+  summary_sw: string | null;
   summary_error: string | null;
   summary_error_type: SummarizationErrorType | null;
   summary_confidence: number | null;
+  translation_status: string | null;
+  translation_confidence: number | null;
   uploader: {
     full_name: string | null;
     email: string;
@@ -45,6 +51,7 @@ export default function DocumentsPage() {
   const [filter, setFilter] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [summaryModal, setSummaryModal] = useState<{
     isOpen: boolean;
@@ -96,7 +103,6 @@ export default function DocumentsPage() {
           table: 'documents',
         },
         (payload) => {
-          console.log('Realtime update received:', payload);
 
           // Update the specific document in our local state
           setDocuments((prevDocs) =>
@@ -189,6 +195,106 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleRetrySummarization = async (id: string) => {
+    if (!confirm('Retry summarization for this document?')) {
+      return;
+    }
+
+    try {
+      setRetrying(id);
+      const response = await fetch(`/api/documents/${id}/summarize/retry`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to retry summarization');
+      }
+
+      // Update local state to show pending status
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id
+            ? { ...doc, summarization_status: 'pending' as SummarizationStatus }
+            : doc
+        )
+      );
+
+      alert('Summarization retry queued successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to retry summarization');
+    } finally {
+      setRetrying(null);
+    }
+  };
+
+  const handlePublish = async (id: string) => {
+    if (!confirm('Publish this document? It will be visible to the public.')) {
+      return;
+    }
+
+    try {
+      setPublishing(id);
+      const response = await fetch(`/api/documents/${id}/publish`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to publish document');
+        return;
+      }
+
+      // Update local state
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id ? { ...doc, status: 'published' } : doc
+        )
+      );
+
+      alert('Document published successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to publish document');
+    } finally {
+      setPublishing(null);
+    }
+  };
+
+  const handleUnpublish = async (id: string) => {
+    if (!confirm('Unpublish this document? It will no longer be visible to the public.')) {
+      return;
+    }
+
+    try {
+      setPublishing(id);
+      const response = await fetch(`/api/documents/${id}/publish`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to unpublish document');
+        return;
+      }
+
+      // Update local state
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id ? { ...doc, status: 'processing' } : doc
+        )
+      );
+
+      alert('Document unpublished successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to unpublish document');
+    } finally {
+      setPublishing(null);
+    }
+  };
+
   const handleOpenSummary = (document: Document) => {
     setSummaryModal({
       isOpen: true,
@@ -236,6 +342,23 @@ export default function DocumentsPage() {
           </svg>
           Summarizing
         </span>
+      );
+    }
+
+    if (status === 'skipped') {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 cursor-help">
+                ⊘ Skipped
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">{document.summary_error || 'Summarization skipped for this document'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
 
@@ -332,6 +455,24 @@ export default function DocumentsPage() {
             </TooltipContent>
           </Tooltip>
         );
+      case 'completed_scanned':
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-default items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                ⚠️ Scanned PDF
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="font-semibold text-orange-600">Scanned Document Detected</p>
+              <p className="text-xs mt-1">{document.extraction_warning || 'Minimal text extracted. Document may contain images only.'}</p>
+              <p className="text-xs mt-1 text-gray-500">
+                {document.extraction_page_count || 0} pages,{' '}
+                {document.extraction_char_count?.toLocaleString() || 0} chars
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        );
       case 'failed':
         return (
           <Tooltip>
@@ -401,7 +542,7 @@ export default function DocumentsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Manage uploaded budget documents
+            Manage uploaded documents
           </p>
         </div>
         <Link
@@ -506,6 +647,9 @@ export default function DocumentsPage() {
                     Title
                   </th>
                   <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Category
+                  </th>
+                  <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
                     Extraction Status
                   </th>
                   <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
@@ -566,6 +710,19 @@ export default function DocumentsPage() {
                         </TooltipContent>
                       </Tooltip>
                     </td>
+                    <td className="px-2 py-4 text-center sm:px-4">
+                      {document.category ? (
+                        <Badge variant="outline" className="text-xs">
+                          {document.category === 'budgeting' && 'Budget'}
+                          {document.category === 'planning' && 'Planning'}
+                          {document.category === 'healthcare' && 'Healthcare'}
+                          {document.category === 'education' && 'Education'}
+                          {document.category === 'transport' && 'Transport'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-gray-400">No category</span>
+                      )}
+                    </td>
                     <td className="px-2 py-4 sm:px-4">
                       {getExtractionStatusBadge(document)}
                     </td>
@@ -607,15 +764,69 @@ export default function DocumentsPage() {
                           </button>
                         )}
 
-                        {/* Retry button (only if extraction failed) */}
+                        {/* Retry extraction (only if extraction failed) */}
                         {document.extraction_status === 'failed' && (
                           <button
                             onClick={() => handleRetryExtraction(document.id)}
                             disabled={retrying === document.id}
                             className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
                           >
-                            {retrying === document.id ? 'Retrying...' : 'Retry'}
+                            {retrying === document.id ? 'Retrying...' : 'Retry Extraction'}
                           </button>
+                        )}
+
+                        {/* Retry summarization (only if summarization failed and extraction succeeded) */}
+                        {document.summarization_status === 'failed' &&
+                         document.extraction_status === 'completed' && (
+                          <button
+                            onClick={() => handleRetrySummarization(document.id)}
+                            disabled={retrying === document.id}
+                            className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                          >
+                            {retrying === document.id ? 'Retrying...' : 'Retry Summary'}
+                          </button>
+                        )}
+
+                        {/* Publish/Unpublish button */}
+                        {document.status === 'published' ? (
+                          <button
+                            onClick={() => handleUnpublish(document.id)}
+                            disabled={publishing === document.id}
+                            className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                          >
+                            {publishing === document.id ? 'Unpublishing...' : 'Unpublish'}
+                          </button>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePublish(document.id)}
+                                  disabled={
+                                    publishing === document.id ||
+                                    !document.summary_en ||
+                                    !document.summary_sw
+                                  }
+                                  className="text-indigo-600 hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {publishing === document.id ? 'Publishing...' : 'Publish'}
+                                </button>
+                              </span>
+                            </TooltipTrigger>
+                            {(!document.summary_en || !document.summary_sw) && (
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  Cannot publish: Missing{' '}
+                                  {!document.summary_en && !document.summary_sw
+                                    ? 'English and Swahili summaries'
+                                    : !document.summary_en
+                                    ? 'English summary'
+                                    : 'Swahili summary'}
+                                </p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                         )}
 
                         <button
@@ -641,10 +852,14 @@ export default function DocumentsPage() {
           documentId={summaryModal.document.id}
           documentTitle={summaryModal.document.title}
           initialSummary={summaryModal.document.summary_en}
+          swahiliSummary={summaryModal.document.summary_sw}
           confidence={summaryModal.document.summary_confidence}
+          translationStatus={summaryModal.document.translation_status || undefined}
+          translationConfidence={summaryModal.document.translation_confidence}
           isOpen={summaryModal.isOpen}
           onClose={handleCloseSummary}
           onSave={handleSaveSummary}
+          onRetranslate={fetchDocuments}
         />
       )}
     </div>

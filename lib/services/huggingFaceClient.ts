@@ -2,8 +2,8 @@
  * Hugging Face API Client
  *
  * This module provides a robust client for interacting with the Hugging Face Inference API.
- * It includes retry logic, timeout handling, error classification, and circuit breaker pattern
- * for graceful degradation under high load or API failures.
+ * It includes retry logic, timeout handling, error classification, circuit breaker pattern
+ * for graceful degradation under high load or API failures, and rate limiting.
  *
  * Features:
  * - Exponential backoff retry for rate limits (429 responses)
@@ -11,9 +11,15 @@
  * - Comprehensive error classification
  * - Request/response logging for debugging
  * - Circuit breaker pattern for API failure scenarios
+ * - Daily rate limit tracking (free tier: 24k/month ~800/day)
  */
 
 import { InferenceClient } from '@huggingface/inference';
+import {
+  checkRateLimit,
+  incrementRateLimit,
+  isRateLimitExceeded,
+} from './rateLimiter';
 
 // Environment configuration
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
@@ -21,8 +27,8 @@ const HF_TIMEOUT_MS = parseInt(process.env.HUGGING_FACE_TIMEOUT_MS || '30000', 1
 const MAX_TIMEOUT_MS = 60000; // 60 seconds maximum
 
 // Circuit breaker configuration
-const CIRCUIT_BREAKER_THRESHOLD = 5; // Number of failures before opening circuit
-const CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute cooldown
+const CIRCUIT_BREAKER_THRESHOLD = 15; // Number of failures before opening circuit (increased from 5)
+const CIRCUIT_BREAKER_TIMEOUT = 300000; // 5 minute cooldown (increased from 1 min)
 let circuitBreakerFailures = 0;
 let circuitBreakerOpenUntil: number | null = null;
 
@@ -214,6 +220,19 @@ export async function summarizeText(
   // Validate timeout
   const safeTimeout = Math.min(timeout, MAX_TIMEOUT_MS);
 
+  // Check rate limit FIRST (before circuit breaker)
+  if (isRateLimitExceeded()) {
+    const rateLimitInfo = checkRateLimit();
+    console.warn(
+      `[HuggingFace] Daily rate limit exceeded (${rateLimitInfo.current}/${rateLimitInfo.limit}). ` +
+      `Resets at ${rateLimitInfo.resetAt.toISOString()}`
+    );
+    throw new HuggingFaceError(
+      `Daily API rate limit exceeded (${rateLimitInfo.current}/${rateLimitInfo.limit}). Resets at ${rateLimitInfo.resetAt.toLocaleTimeString()}.`,
+      'rate_limited'
+    );
+  }
+
   // Check circuit breaker
   if (isCircuitOpen()) {
     const error = new HuggingFaceError(
@@ -243,14 +262,12 @@ export async function summarizeText(
 
       try {
         // Call Hugging Face API
-        // wait_for_model: true allows the API to load the model if it's cold
         const result = await client.summarization({
           model: 'facebook/bart-large-cnn',
           inputs: text,
           parameters: {
             max_length: maxLength,
             min_length: minLength,
-            wait_for_model: true,
           },
         });
 
@@ -260,6 +277,9 @@ export async function summarizeText(
         console.log(
           `[HuggingFace] ✓ Success in ${duration}ms. Summary: ${result.summary_text?.length || 0} characters`
         );
+
+        // Increment rate limit counter on successful API call
+        incrementRateLimit();
 
         // Reset circuit breaker on success
         resetCircuit();

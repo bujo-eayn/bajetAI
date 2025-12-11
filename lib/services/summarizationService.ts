@@ -12,23 +12,33 @@
  * - Confidence scoring for summary quality
  */
 
-import { summarizeText, HuggingFaceError } from './huggingFaceClient';
+import {
+  openaiProvider,
+  huggingFaceProvider,
+  extractiveFallbackProvider,
+  ProviderChain,
+} from './providers';
+import type { TokenUsage } from './providers/AIProvider';
 
-// Chunking configuration
-const CHUNK_SIZE_TOKENS = 1024; // ~4000 characters
-const CHUNK_OVERLAP_TOKENS = 100; // ~400 characters overlap
+// Chunking configuration - OPTIMIZED FOR GPT-3.5-TURBO 16K
+const CHUNK_SIZE_TOKENS = 3000; // ~12000 characters (optimized for OpenAI 16k context)
+const CHUNK_OVERLAP_TOKENS = 300; // ~1200 characters overlap
 const MIN_CHUNK_TOKENS = 100;
-const MAX_CHUNK_TOKENS = 1024;
+const MAX_CHUNK_TOKENS = 3000; // Increased from 1024
 const CHARS_PER_TOKEN = 4; // Approximate ratio
 
 // Summarization configuration
-const MAX_SUMMARY_LENGTH = 600; // tokens (~600 characters)
-const MIN_SUMMARY_LENGTH = 200; // tokens (~200 characters)
-const BATCH_SIZE = 5; // Process 5 chunks concurrently
-const BATCH_DELAY_MS = 500; // Delay between batches
+const MAX_SUMMARY_LENGTH = 600; // words (for compatibility)
+const MIN_SUMMARY_LENGTH = 200; // words (for compatibility)
+const BATCH_SIZE = 3; // Process 3 chunks concurrently
+const BATCH_DELAY_MS = 2000; // 2 second delay between batches
 
-// Multi-level summarization thresholds
-const LARGE_DOC_THRESHOLD = 50; // chunks
+// Initialize provider chain: OpenAI → HuggingFace → Extractive
+const providerChain = new ProviderChain([
+  openaiProvider,
+  huggingFaceProvider,
+  extractiveFallbackProvider,
+]);
 
 export type SummarizationErrorType =
   | 'rate_limited'
@@ -57,6 +67,11 @@ export interface SummarizationResult {
   charCount: number;
   chunkCount: number;
   errors?: string[];
+  // OpenAI Migration - Phase 7: Add provider tracking
+  provider?: string;
+  tokensUsed?: TokenUsage;
+  targetLength?: number;
+  actualLength?: number;
 }
 
 /**
@@ -192,7 +207,8 @@ export function combineChunkSummaries(chunkSummaries: string[]): string {
 }
 
 /**
- * Create fallback extractive summary using first N sentences
+ * Create fallback extractive summary using intelligent sentence selection
+ * Improved to select diverse sentences from throughout the document
  */
 function createFallbackSummary(text: string, targetLength: number = 600): string {
   // Split into sentences
@@ -205,16 +221,44 @@ function createFallbackSummary(text: string, targetLength: number = 600): string
     return text.substring(0, targetLength).trim() + '...';
   }
 
-  // Take first N sentences until we reach target length
-  let summary = '';
-  for (const sentence of sentences) {
-    if (summary.length + sentence.length > targetLength) {
+  // Improved: Take sentences from beginning, middle, and end for better coverage
+  const selectedSentences: string[] = [];
+  let totalLength = 0;
+
+  // Select 40% from beginning (key introductory info)
+  const beginSentences = sentences.slice(0, Math.ceil(sentences.length * 0.2));
+
+  // Select 40% from middle (core content)
+  const midStart = Math.floor(sentences.length * 0.4);
+  const midEnd = Math.ceil(sentences.length * 0.6);
+  const middleSentences = sentences.slice(midStart, midEnd);
+
+  // Select 20% from end (conclusions)
+  const endSentences = sentences.slice(-Math.ceil(sentences.length * 0.1));
+
+  // Combine with preference for key sentences (containing numbers, "total", "budget", etc.)
+  const allCandidates = [...beginSentences, ...middleSentences, ...endSentences];
+  const keywordPattern = /\b(budget|total|allocation|million|billion|ksh|key|priority|objective)\b/i;
+
+  // Prioritize sentences with keywords
+  const prioritizedSentences = allCandidates.sort((a, b) => {
+    const aHasKeyword = keywordPattern.test(a) ? 1 : 0;
+    const bHasKeyword = keywordPattern.test(b) ? 1 : 0;
+    return bHasKeyword - aHasKeyword;
+  });
+
+  // Build summary until target length
+  for (const sentence of prioritizedSentences) {
+    if (totalLength + sentence.length + 2 > targetLength) {
       break;
     }
-    summary += sentence + '. ';
+    selectedSentences.push(sentence);
+    totalLength += sentence.length + 2; // +2 for ". "
   }
 
-  return summary.trim() || sentences[0] + '.';
+  return selectedSentences.length > 0
+    ? selectedSentences.join('. ') + '.'
+    : sentences[0] + '.';
 }
 
 /**
@@ -230,31 +274,43 @@ function sleep(ms: number): Promise<void> {
 async function summarizeChunk(
   chunk: SummarizationChunk,
   totalChunks: number
-): Promise<{ summary: string; error?: string }> {
+): Promise<{ summary: string; error?: string; provider?: string }> {
   try {
     console.log(
       `[Summarization] Processing chunk ${chunk.index + 1}/${totalChunks} ` +
       `(${chunk.tokenCount} tokens, ${chunk.text.length} chars)`
     );
 
-    const summary = await summarizeText(chunk.text, {
+    // Use provider chain - automatically tries OpenAI → HuggingFace → Extractive
+    const result = await providerChain.summarize(chunk.text, {
       maxLength: MAX_SUMMARY_LENGTH,
       minLength: MIN_SUMMARY_LENGTH,
       retries: 1, // Limited retries for individual chunks
       timeout: 60000, // 60 seconds to allow for model cold start
     });
 
-    return { summary };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(
-      `[Summarization] Failed to summarize chunk ${chunk.index + 1}:`,
-      errorMessage
+    console.log(
+      `[Summarization] Chunk ${chunk.index + 1} summarized by ${result.provider} ` +
+      `(confidence: ${result.confidence.toFixed(2)})`
     );
 
     return {
+      summary: result.summary,
+      provider: result.provider
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(
+      `[Summarization] All providers failed for chunk ${chunk.index + 1}:`,
+      errorMessage
+    );
+
+    // Final fallback: extractive summary (shouldn't reach here as provider chain includes extractive)
+    console.log(`[Summarization] Using local extractive fallback for chunk ${chunk.index + 1}`);
+    return {
       summary: createFallbackSummary(chunk.text, 200), // Shorter fallback for chunks
       error: errorMessage,
+      provider: 'fallback-local',
     };
   }
 }
@@ -288,26 +344,35 @@ export async function summarizeDocument(
       console.log('[Summarization] Document is small enough to summarize directly');
 
       try {
-        const summary = await summarizeText(trimmedText, {
+        const result = await providerChain.summarize(trimmedText, {
           maxLength: MAX_SUMMARY_LENGTH,
           minLength: MIN_SUMMARY_LENGTH,
           retries: 2,
           timeout: 60000, // 60 seconds to allow for model cold start
         });
 
-        if (!validateSummary(summary, trimmedText)) {
+        if (!validateSummary(result.summary, trimmedText)) {
           throw new Error('Generated summary failed quality validation');
         }
 
+        console.log(
+          `[Summarization] Document summarized by ${result.provider} ` +
+          `(confidence: ${result.confidence.toFixed(2)})`
+        );
+
         return {
-          summary,
-          confidence: 1.0,
-          modelVersion: 'facebook/bart-large-cnn',
-          charCount: summary.length,
+          summary: result.summary,
+          confidence: result.confidence,
+          modelVersion: result.modelVersion,
+          charCount: result.summary.length,
           chunkCount: 1,
+          provider: result.provider,
+          tokensUsed: result.tokensUsed,
+          targetLength: result.targetLength,
+          actualLength: result.actualLength,
         };
       } catch (error) {
-        console.error('[Summarization] AI summarization failed, using fallback:', error);
+        console.error('[Summarization] All providers failed, using fallback:', error);
 
         const fallbackSummary = createFallbackSummary(trimmedText);
         return {
@@ -365,29 +430,102 @@ export async function summarizeDocument(
       `(${combinedSummary.length} chars)`
     );
 
-    // Level 2: If combined summary is still too long, summarize it
+    // Level 2: If combined summary is still too long, summarize it recursively
     if (tokenizeText(combinedSummary) > MAX_CHUNK_TOKENS) {
-      console.log('[Summarization] Combined summary is long, creating final summary (Level 2)');
+      console.log(
+        `[Summarization] Combined summary is long (${tokenizeText(combinedSummary)} tokens), ` +
+        `creating final summary (Level 2)`
+      );
 
       try {
-        const finalSummary = await summarizeText(combinedSummary, {
+        // For VERY large combined summaries (>MAX_CHUNK_TOKENS), chunk and summarize recursively
+        const combinedTokens = tokenizeText(combinedSummary);
+        if (combinedTokens > MAX_CHUNK_TOKENS * 2) {
+          console.log(
+            `[Summarization] Combined summary too large (${combinedTokens} tokens), ` +
+            `using recursive chunking`
+          );
+
+          // Split combined summary into chunks
+          const level2Chunks = splitByBoundary(combinedSummary);
+          console.log(`[Summarization] Split Level 2 into ${level2Chunks.length} chunks`);
+
+          const level2Summaries: string[] = [];
+
+          // Summarize Level 2 chunks in batches
+          for (let i = 0; i < level2Chunks.length; i += BATCH_SIZE) {
+            const batch = level2Chunks.slice(i, Math.min(i + BATCH_SIZE, level2Chunks.length));
+
+            console.log(
+              `[Summarization] Processing Level 2 batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(level2Chunks.length / BATCH_SIZE)}`
+            );
+
+            const results = await Promise.all(
+              batch.map((chunk) => summarizeChunk(chunk, level2Chunks.length))
+            );
+
+            results.forEach((result) => {
+              level2Summaries.push(result.summary);
+            });
+
+            if (i + BATCH_SIZE < level2Chunks.length) {
+              await sleep(BATCH_DELAY_MS);
+            }
+          }
+
+          // Combine Level 2 summaries
+          const finalCombined = combineChunkSummaries(level2Summaries);
+          console.log(`[Summarization] Level 2 combined: ${finalCombined.length} chars`);
+
+          // If still too long, use extractive summarization
+          const finalSummary = tokenizeText(finalCombined) > MAX_CHUNK_TOKENS
+            ? createFallbackSummary(finalCombined, 800)
+            : finalCombined;
+
+          const confidence = chunkErrors.length > 0
+            ? Math.max(0.5, 1.0 - chunkErrors.length / chunks.length)
+            : 0.8;
+
+          return {
+            summary: finalSummary,
+            confidence,
+            modelVersion: 'multi-level-recursive',
+            charCount: finalSummary.length,
+            chunkCount: chunks.length,
+            errors: chunkErrors.length > 0 ? chunkErrors : undefined,
+          };
+        }
+
+        // For moderately large summaries, single Level 2 pass
+        const result = await providerChain.summarize(combinedSummary, {
           maxLength: MAX_SUMMARY_LENGTH,
           minLength: MIN_SUMMARY_LENGTH,
           retries: 2,
           timeout: 60000, // 60 seconds to allow for model cold start
         });
 
+        // Adjust confidence based on chunk errors
+        const baseConfidence = result.confidence;
         const confidence = chunkErrors.length > 0
-          ? Math.max(0.5, 1.0 - chunkErrors.length / chunks.length)
-          : 0.9;
+          ? Math.max(0.5, baseConfidence * (1.0 - chunkErrors.length / chunks.length))
+          : Math.max(0.9, baseConfidence);
+
+        console.log(
+          `[Summarization] Level 2 summary created by ${result.provider} ` +
+          `(confidence: ${confidence.toFixed(2)})`
+        );
 
         return {
-          summary: finalSummary,
+          summary: result.summary,
           confidence,
-          modelVersion: 'facebook/bart-large-cnn',
-          charCount: finalSummary.length,
+          modelVersion: result.modelVersion,
+          charCount: result.summary.length,
           chunkCount: chunks.length,
           errors: chunkErrors.length > 0 ? chunkErrors : undefined,
+          provider: result.provider,
+          tokensUsed: result.tokensUsed,
+          targetLength: result.targetLength,
+          actualLength: result.actualLength,
         };
       } catch (error) {
         console.error('[Summarization] Level 2 summarization failed:', error);
@@ -419,7 +557,7 @@ export async function summarizeDocument(
     return {
       summary: combinedSummary,
       confidence,
-      modelVersion: 'facebook/bart-large-cnn',
+      modelVersion: 'multi-chunk-combined', // Combined from multiple AI-generated chunk summaries
       charCount: combinedSummary.length,
       chunkCount: chunks.length,
       errors: chunkErrors.length > 0 ? chunkErrors : undefined,

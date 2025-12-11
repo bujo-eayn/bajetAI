@@ -75,10 +75,21 @@ database/STORAGE_SETUP.md
 FIX_RLS_ERROR.md
 plan4.md
 plan4-execution-document.md
-nul
+null
+MONITORING_SETUP.md
 
 # Claude Code configuration and preferences
 .claude/
 
 # toDO
 toDo
+
+.env.sentry-build-plugin
+
+OPENAI_MIGRATION_PLAN.md
+OPENAI_MIGRATION_COMPLETE.md
+
+dev-docs/*
+
+nul
+build.log

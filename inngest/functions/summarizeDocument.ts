@@ -127,9 +127,10 @@ export default inngest.createFunction(
     concurrency: {
       limit: 2,
     },
-    // Timeout: 10 minutes for large documents
+    // Timeout: 3 hours for very large documents (1000+ chunks)
+    // Most documents complete in minutes, but extreme cases (1400+ chunks) can take ~2 hours
     timeouts: {
-      finish: '10m',
+      finish: '3h',
     },
   },
   {
@@ -257,6 +258,11 @@ export default inngest.createFunction(
     await step.run('save-summary', async () => {
       const supabase = createAdminClient();
 
+      // Calculate coverage percentage
+      const coveragePercent = result.targetLength && result.actualLength
+        ? (result.actualLength / result.targetLength) * 100
+        : null;
+
       const { error } = await supabase
         .from('documents')
         .update({
@@ -269,6 +275,12 @@ export default inngest.createFunction(
           summary_model_version: result.modelVersion,
           summary_error: null,
           summary_error_type: null,
+          // OpenAI Migration - Phase 7: Add provider tracking
+          summary_provider: result.provider || 'unknown',
+          summary_tokens_used: result.tokensUsed || null,
+          summary_target_length: result.targetLength || null,
+          summary_actual_length: result.actualLength || null,
+          summary_coverage_percent: coveragePercent,
         })
         .eq('id', documentId);
 
@@ -278,6 +290,22 @@ export default inngest.createFunction(
       }
 
       console.log(`[Summarization] ✓ Successfully saved summary for document ${documentId}`);
+    });
+
+    // Step 6: Trigger translation
+    await step.run('trigger-translation', async () => {
+      console.log(`[Summarization] Triggering translation for document ${documentId}`);
+
+      // Send Inngest event to trigger translation
+      await inngest.send({
+        name: 'document.summarization-completed',
+        data: {
+          documentId,
+          englishSummary: result.summary,
+        },
+      });
+
+      console.log(`[Summarization] ✓ Translation queued for document ${documentId}`);
     });
 
     return {

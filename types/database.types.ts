@@ -105,25 +105,47 @@ export type Database = {
           extraction_page_count: number | null
           extraction_started_at: string | null
           extraction_status: string | null
+          extraction_warning: string | null
           file_name: string
           file_path: string | null
           file_size: number | null
           file_url: string
           id: string
           processed: boolean
+          progress_percent: number | null
+          progress_status: string | null
           status: string
           summarization_status: string | null
+          summary_actual_length: number | null
           summary_char_count: number | null
           summary_completed_at: string | null
           summary_confidence: number | null
+          summary_coverage_percent: number | null
           summary_duration_ms: number | null
           summary_en: string | null
           summary_error: string | null
           summary_error_type: string | null
           summary_model_version: string | null
+          summary_provider: string | null
           summary_started_at: string | null
           summary_sw: string | null
+          summary_target_length: number | null
+          summary_tokens_used: Json | null
           title: string
+          translation_completed_at: string | null
+          translation_confidence: number | null
+          translation_duration_ms: number | null
+          translation_error: string | null
+          translation_error_type: string | null
+          translation_model_version: string | null
+          translation_output_chars: number | null
+          translation_output_words: number | null
+          translation_provider: string | null
+          translation_source_chars: number | null
+          translation_source_words: number | null
+          translation_started_at: string | null
+          translation_status: string | null
+          translation_tokens_used: Json | null
           updated_at: string
           uploaded_by: string
         }
@@ -138,25 +160,47 @@ export type Database = {
           extraction_page_count?: number | null
           extraction_started_at?: string | null
           extraction_status?: string | null
+          extraction_warning?: string | null
           file_name: string
           file_path?: string | null
           file_size?: number | null
           file_url: string
           id?: string
           processed?: boolean
+          progress_percent?: number | null
+          progress_status?: string | null
           status?: string
           summarization_status?: string | null
+          summary_actual_length?: number | null
           summary_char_count?: number | null
           summary_completed_at?: string | null
           summary_confidence?: number | null
+          summary_coverage_percent?: number | null
           summary_duration_ms?: number | null
           summary_en?: string | null
           summary_error?: string | null
           summary_error_type?: string | null
           summary_model_version?: string | null
+          summary_provider?: string | null
           summary_started_at?: string | null
           summary_sw?: string | null
+          summary_target_length?: number | null
+          summary_tokens_used?: Json | null
           title: string
+          translation_completed_at?: string | null
+          translation_confidence?: number | null
+          translation_duration_ms?: number | null
+          translation_error?: string | null
+          translation_error_type?: string | null
+          translation_model_version?: string | null
+          translation_output_chars?: number | null
+          translation_output_words?: number | null
+          translation_provider?: string | null
+          translation_source_chars?: number | null
+          translation_source_words?: number | null
+          translation_started_at?: string | null
+          translation_status?: string | null
+          translation_tokens_used?: Json | null
           updated_at?: string
           uploaded_by: string
         }
@@ -171,25 +215,47 @@ export type Database = {
           extraction_page_count?: number | null
           extraction_started_at?: string | null
           extraction_status?: string | null
+          extraction_warning?: string | null
           file_name?: string
           file_path?: string | null
           file_size?: number | null
           file_url?: string
           id?: string
           processed?: boolean
+          progress_percent?: number | null
+          progress_status?: string | null
           status?: string
           summarization_status?: string | null
+          summary_actual_length?: number | null
           summary_char_count?: number | null
           summary_completed_at?: string | null
           summary_confidence?: number | null
+          summary_coverage_percent?: number | null
           summary_duration_ms?: number | null
           summary_en?: string | null
           summary_error?: string | null
           summary_error_type?: string | null
           summary_model_version?: string | null
+          summary_provider?: string | null
           summary_started_at?: string | null
           summary_sw?: string | null
+          summary_target_length?: number | null
+          summary_tokens_used?: Json | null
           title?: string
+          translation_completed_at?: string | null
+          translation_confidence?: number | null
+          translation_duration_ms?: number | null
+          translation_error?: string | null
+          translation_error_type?: string | null
+          translation_model_version?: string | null
+          translation_output_chars?: number | null
+          translation_output_words?: number | null
+          translation_provider?: string | null
+          translation_source_chars?: number | null
+          translation_source_words?: number | null
+          translation_started_at?: string | null
+          translation_status?: string | null
+          translation_tokens_used?: Json | null
           updated_at?: string
           uploaded_by?: string
         }
@@ -202,6 +268,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          area: string
+          email: string
+          id: string
+          notified: boolean
+          notified_at: string | null
+          subscribed_at: string
+        }
+        Insert: {
+          area: string
+          email: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          subscribed_at?: string
+        }
+        Update: {
+          area?: string
+          email?: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          subscribed_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
