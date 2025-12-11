@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { DocumentCategory } from '@/types';
 
 export default function UploadPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>('budgeting');
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -72,6 +74,7 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('title', title);
+      formData.append('category', category);
 
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
@@ -123,7 +126,7 @@ export default function UploadPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Upload Document</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Upload budget PDFs for AI processing and public viewing
+          Upload documents for AI processing and public viewing
         </p>
       </div>
 
@@ -142,9 +145,35 @@ export default function UploadPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-            placeholder="e.g., National Budget 2024"
+            placeholder="e.g., Policy Document 2024"
             required
           />
+        </div>
+
+        {/* Category Selection */}
+        <div>
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Participation Area
+          </label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as DocumentCategory)}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+            required
+          >
+            <option value="budgeting">Budget & Finance</option>
+            <option value="planning">Urban & Rural Planning</option>
+            <option value="healthcare">Healthcare Services</option>
+            <option value="education">Education System</option>
+            <option value="transport">Transport & Infrastructure</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Select which area this document belongs to
+          </p>
         </div>
 
         {/* File Upload Area */}

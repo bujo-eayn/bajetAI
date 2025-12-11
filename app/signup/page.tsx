@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { Button } from "@/components/ui/button";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function SignupPage() {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join bajetAI - Budget Transparency Platform
+            Join bajetAI - Public Participation Platform
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -139,13 +140,13 @@ export default function SignupPage() {
           )}
 
           <div>
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+              className="w-full"
             >
               {loading ? 'Creating account...' : 'Sign up'}
-            </button>
+            </Button>
           </div>
 
           <div className="text-center text-sm">

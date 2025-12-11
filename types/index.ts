@@ -8,6 +8,8 @@ export type UserRole = 'official' | 'public';
 
 export type DocumentStatus = 'processing' | 'published' | 'archived';
 
+export type DocumentCategory = 'budgeting' | 'planning' | 'healthcare' | 'education' | 'transport';
+
 export type CommentStatus = 'pending' | 'approved' | 'rejected';
 
 export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'completed_scanned' | 'failed';
@@ -95,6 +97,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           status: DocumentStatus;
+          category: DocumentCategory | null;
           extracted_text: string | null;
           summary_en: string | null;
           summary_sw: string | null;
@@ -119,6 +122,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           status?: DocumentStatus;
+          category?: DocumentCategory | null;
           extracted_text?: string | null;
           summary_en?: string | null;
           summary_sw?: string | null;
@@ -143,6 +147,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           status?: DocumentStatus;
+          category?: DocumentCategory | null;
           extracted_text?: string | null;
           summary_en?: string | null;
           summary_sw?: string | null;

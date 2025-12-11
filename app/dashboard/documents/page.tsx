@@ -10,8 +10,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import SummaryModal from '@/components/dashboard/SummaryModal';
-import type { ExtractionStatus, ExtractionErrorType, SummarizationStatus, SummarizationErrorType } from '@/types';
+import type { ExtractionStatus, ExtractionErrorType, SummarizationStatus, SummarizationErrorType, DocumentCategory } from '@/types';
 
 type Document = {
   id: string;
@@ -20,6 +21,7 @@ type Document = {
   file_size: number;
   file_url: string;
   status: string;
+  category: DocumentCategory | null;
   created_at: string;
   extraction_status: ExtractionStatus;
   extraction_error: string | null;
@@ -49,6 +51,7 @@ export default function DocumentsPage() {
   const [filter, setFilter] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [summaryModal, setSummaryModal] = useState<{
     isOpen: boolean;
@@ -100,7 +103,6 @@ export default function DocumentsPage() {
           table: 'documents',
         },
         (payload) => {
-          console.log('Realtime update received:', payload);
 
           // Update the specific document in our local state
           setDocuments((prevDocs) =>
@@ -224,6 +226,72 @@ export default function DocumentsPage() {
       alert(err.message || 'Failed to retry summarization');
     } finally {
       setRetrying(null);
+    }
+  };
+
+  const handlePublish = async (id: string) => {
+    if (!confirm('Publish this document? It will be visible to the public.')) {
+      return;
+    }
+
+    try {
+      setPublishing(id);
+      const response = await fetch(`/api/documents/${id}/publish`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to publish document');
+        return;
+      }
+
+      // Update local state
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id ? { ...doc, status: 'published' } : doc
+        )
+      );
+
+      alert('Document published successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to publish document');
+    } finally {
+      setPublishing(null);
+    }
+  };
+
+  const handleUnpublish = async (id: string) => {
+    if (!confirm('Unpublish this document? It will no longer be visible to the public.')) {
+      return;
+    }
+
+    try {
+      setPublishing(id);
+      const response = await fetch(`/api/documents/${id}/publish`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to unpublish document');
+        return;
+      }
+
+      // Update local state
+      setDocuments((prevDocs) =>
+        prevDocs.map((doc) =>
+          doc.id === id ? { ...doc, status: 'processing' } : doc
+        )
+      );
+
+      alert('Document unpublished successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to unpublish document');
+    } finally {
+      setPublishing(null);
     }
   };
 
@@ -474,7 +542,7 @@ export default function DocumentsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Manage uploaded budget documents
+            Manage uploaded documents
           </p>
         </div>
         <Link
@@ -579,6 +647,9 @@ export default function DocumentsPage() {
                     Title
                   </th>
                   <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
+                    Category
+                  </th>
+                  <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
                     Extraction Status
                   </th>
                   <th className="px-2 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500 sm:px-4">
@@ -638,6 +709,19 @@ export default function DocumentsPage() {
                           </p>
                         </TooltipContent>
                       </Tooltip>
+                    </td>
+                    <td className="px-2 py-4 text-center sm:px-4">
+                      {document.category ? (
+                        <Badge variant="outline" className="text-xs">
+                          {document.category === 'budgeting' && 'Budget'}
+                          {document.category === 'planning' && 'Planning'}
+                          {document.category === 'healthcare' && 'Healthcare'}
+                          {document.category === 'education' && 'Education'}
+                          {document.category === 'transport' && 'Transport'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-gray-400">No category</span>
+                      )}
                     </td>
                     <td className="px-2 py-4 sm:px-4">
                       {getExtractionStatusBadge(document)}
@@ -701,6 +785,48 @@ export default function DocumentsPage() {
                           >
                             {retrying === document.id ? 'Retrying...' : 'Retry Summary'}
                           </button>
+                        )}
+
+                        {/* Publish/Unpublish button */}
+                        {document.status === 'published' ? (
+                          <button
+                            onClick={() => handleUnpublish(document.id)}
+                            disabled={publishing === document.id}
+                            className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                          >
+                            {publishing === document.id ? 'Unpublishing...' : 'Unpublish'}
+                          </button>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePublish(document.id)}
+                                  disabled={
+                                    publishing === document.id ||
+                                    !document.summary_en ||
+                                    !document.summary_sw
+                                  }
+                                  className="text-indigo-600 hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {publishing === document.id ? 'Publishing...' : 'Publish'}
+                                </button>
+                              </span>
+                            </TooltipTrigger>
+                            {(!document.summary_en || !document.summary_sw) && (
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  Cannot publish: Missing{' '}
+                                  {!document.summary_en && !document.summary_sw
+                                    ? 'English and Swahili summaries'
+                                    : !document.summary_en
+                                    ? 'English summary'
+                                    : 'Swahili summary'}
+                                </p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                         )}
 
                         <button

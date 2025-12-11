@@ -90,3 +90,6 @@ OPENAI_MIGRATION_PLAN.md
 OPENAI_MIGRATION_COMPLETE.md
 
 dev-docs/*
+
+nul
+build.log
