@@ -281,16 +281,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   // Load language preference from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('bajetai-language') as Language | null;
-    if (stored && (stored === 'en' || stored === 'sw')) {
-      setLanguageState(stored);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('bajetai-language') as Language | null;
+      if (stored && (stored === 'en' || stored === 'sw')) {
+        setLanguageState(stored);
+      }
     }
   }, []);
 
   // Persist language preference and update HTML lang attribute
   useEffect(() => {
-    localStorage.setItem('bajetai-language', language);
-    document.documentElement.lang = language;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bajetai-language', language);
+      document.documentElement.lang = language;
+    }
   }, [language]);
 
   const setLanguage = (lang: Language) => {

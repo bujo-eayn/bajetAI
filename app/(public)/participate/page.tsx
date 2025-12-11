@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/templates/PublicLayout';
 import { Breadcrumb } from '@/components/molecules/Breadcrumb';
@@ -30,7 +30,7 @@ const categoryTitles: Record<DocumentCategory, { titleKey: string; descriptionKe
   transport: { titleKey: 'area.transport.title', descriptionKey: 'area.transport.description' },
 };
 
-export default function ParticipatePage() {
+function ParticipateContent() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -154,5 +154,22 @@ export default function ParticipatePage() {
         )}
       </div>
     </PublicLayout>
+  );
+}
+
+export default function ParticipatePage() {
+  return (
+    <Suspense fallback={
+      <PublicLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </PublicLayout>
+    }>
+      <ParticipateContent />
+    </Suspense>
   );
 }

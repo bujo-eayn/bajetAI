@@ -92,3 +92,4 @@ OPENAI_MIGRATION_COMPLETE.md
 dev-docs/*
 
 nul
+build.log
