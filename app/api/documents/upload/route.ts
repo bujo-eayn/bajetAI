@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const title = formData.get('title') as string;
+    const category = formData.get('category') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -53,6 +54,15 @@ export async function POST(request: NextRequest) {
     if (!title || title.trim().length === 0) {
       return NextResponse.json(
         { error: 'Document title is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate category
+    const validCategories = ['budgeting', 'planning', 'healthcare', 'education', 'transport'];
+    if (!category || !validCategories.includes(category)) {
+      return NextResponse.json(
+        { error: 'Valid participation area is required' },
         { status: 400 }
       );
     }
@@ -134,6 +144,7 @@ export async function POST(request: NextRequest) {
         file_name: fileName,
         file_size: file.size,
         uploaded_by: user.id,
+        category: category,
         status: 'processing',
         processed: false,
         extraction_status: 'pending', // Phase 4: Initial extraction status

@@ -269,6 +269,33 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          area: string
+          email: string
+          id: string
+          notified: boolean
+          notified_at: string | null
+          subscribed_at: string
+        }
+        Insert: {
+          area: string
+          email: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          subscribed_at?: string
+        }
+        Update: {
+          area?: string
+          email?: string
+          id?: string
+          notified?: boolean
+          notified_at?: string | null
+          subscribed_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
