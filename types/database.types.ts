@@ -14,87 +14,9 @@ export type Database = {
   }
   public: {
     Tables: {
-      comment_summaries: {
-        Row: {
-          category: string
-          comment_count: number
-          created_at: string
-          document_id: string
-          id: string
-          summary: string
-        }
-        Insert: {
-          category: string
-          comment_count?: number
-          created_at?: string
-          document_id: string
-          id?: string
-          summary: string
-        }
-        Update: {
-          category?: string
-          comment_count?: number
-          created_at?: string
-          document_id?: string
-          id?: string
-          summary?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comment_summaries_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      comments: {
-        Row: {
-          category: string | null
-          content: string
-          created_at: string
-          document_id: string
-          id: string
-          sentiment: string | null
-          status: string
-          user_email: string | null
-          user_name: string
-        }
-        Insert: {
-          category?: string | null
-          content: string
-          created_at?: string
-          document_id: string
-          id?: string
-          sentiment?: string | null
-          status?: string
-          user_email?: string | null
-          user_name: string
-        }
-        Update: {
-          category?: string | null
-          content?: string
-          created_at?: string
-          document_id?: string
-          id?: string
-          sentiment?: string | null
-          status?: string
-          user_email?: string | null
-          user_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comments_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       documents: {
         Row: {
+          category: string | null
           created_at: string
           extracted_text_url: string | null
           extraction_char_count: number | null
@@ -150,6 +72,7 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           extracted_text_url?: string | null
           extraction_char_count?: number | null
@@ -205,6 +128,7 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           extracted_text_url?: string | null
           extraction_char_count?: number | null
@@ -265,6 +189,85 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          sentiment: string | null
+          status: string
+          user_email: string | null
+          user_name: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          sentiment?: string | null
+          status?: string
+          user_email?: string | null
+          user_name: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          sentiment?: string | null
+          status?: string
+          user_email?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_summaries: {
+        Row: {
+          category: string
+          created_at: string
+          document_id: string
+          feedback_count: number
+          id: string
+          summary: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          document_id: string
+          feedback_count?: number
+          id?: string
+          summary: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          document_id?: string
+          feedback_count?: number
+          id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_summaries_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]

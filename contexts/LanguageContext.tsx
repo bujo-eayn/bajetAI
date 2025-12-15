@@ -26,13 +26,13 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.closeMenu': 'Close menu',
 
     // Search
-    'search.placeholder': 'Search documents...',
+    'search.placeholder': 'Search documents of public interest...',
     'search.label': 'Search',
     'search.button': 'Search',
 
     // Document
     'document.published': 'Published',
-    'document.updated': 'Updated',
+    'document.updated': 'Last Updated',
     'document.pages': 'pages',
     'document.summaryAvailable': 'AI Summary Available',
     'document.viewDocument': 'View Document',
@@ -43,7 +43,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Summary
     'summary.title': 'AI-Generated Summary',
-    'summary.confidence': 'Confidence',
+    'summary.confidence': 'Confidence Level',
     'summary.readingTime': 'min read',
     'summary.language': 'Summary Language',
     'summary.selectLanguage': 'Select language',
@@ -51,20 +51,20 @@ const translations: Record<Language, Record<string, string>> = {
     // Tabs
     'tabs.summary': 'Summary',
     'tabs.fullDocument': 'Full Document',
-    'tabs.comments': 'Comments',
+    'tabs.feedback': 'Public Feedback',
 
     // PDF Viewer
     'pdf.loading': 'Loading document...',
-    'pdf.error': 'Failed to load PDF',
-    'pdf.downloadPrompt': 'Download PDF to view on mobile',
+    'pdf.error': 'Unable to load document',
+    'pdf.downloadPrompt': 'Download the PDF to view on mobile',
     'pdf.openInNewTab': 'Open in New Tab',
 
     // Share
     'share.title': 'Share Document',
     'share.copyLink': 'Copy Link',
-    'share.linkCopied': 'Link copied to clipboard!',
+    'share.linkCopied': 'Link copied to clipboard',
     'share.qrCode': 'QR Code',
-    'share.social': 'Share on social media',
+    'share.social': 'Share via social platforms',
 
     // Filters
     'filter.all': 'All',
@@ -74,8 +74,8 @@ const translations: Record<Language, Record<string, string>> = {
     'sort.label': 'Sort',
     'sort.newest': 'Newest First',
     'sort.oldest': 'Oldest First',
-    'sort.titleAsc': 'Title A-Z',
-    'sort.titleDesc': 'Title Z-A',
+    'sort.titleAsc': 'Title A–Z',
+    'sort.titleDesc': 'Title Z–A',
 
     // Pagination
     'pagination.previous': 'Previous',
@@ -97,39 +97,48 @@ const translations: Record<Language, Record<string, string>> = {
     'action.notifyMe': 'Notify Me',
     'action.viewDocs': 'View Documents',
     'action.back': 'Back',
-    'action.submit': 'Submit',
+    'action.submitFeedback': 'Submit Feedback',
     'action.cancel': 'Cancel',
 
     // Coming Soon
     'comingSoon.title': 'Coming Soon',
-    'comingSoon.description': "We're working on bringing you this participation area. Get notified when it launches.",
+    'comingSoon.description':
+      'This participation area is under development. Get notified when it becomes available.',
     'comingSoon.expectedLaunch': 'Expected Launch',
-    'comingSoon.emailPlaceholder': 'Enter your email...',
-    'comingSoon.backToAreas': 'Back to All Participation Areas',
-    'comingSoon.successMessage': "You'll be notified when {area} launches!",
-    'comingSoon.errorMessage': 'Failed to subscribe. Please try again.',
+    'comingSoon.emailPlaceholder': 'Enter your email address...',
+    'comingSoon.backToAreas': 'Back to Participation Areas',
+    'comingSoon.successMessage':
+      'You will be notified when {area} becomes available.',
+    'comingSoon.errorMessage':
+      'Subscription failed. Please try again.',
 
     // Homepage
-    'home.hero.title': 'Empowering Citizen Participation',
-    'home.hero.subtitle': 'Your Voice in Government Decisions - From Policy Planning to Healthcare, Education to Infrastructure',
+    'home.hero.title': 'Enhancing Public Participation',
+    'home.hero.subtitle':
+      'Engage with public-interest matters, understand key issues, and share your perspectives',
     'home.hero.getStarted': 'Start Participating',
     'home.hero.learnMore': 'Learn More',
-    'home.areas.title': 'Active Participation Areas',
+    'home.areas.title': 'Participation Areas',
     'home.stats.documents': 'Documents',
-    'home.stats.comments': 'Comments',
-    'home.stats.users': 'Users',
+    'home.stats.feedback': 'Feedback',
+    'home.stats.users': 'Participants',
 
     // Participation Areas
-    'area.budgeting.title': 'Budget & Finance',
-    'area.budgeting.description': 'Review government budgets, financial plans, and expenditure reports. Share your priorities and suggestions.',
-    'area.planning.title': 'Urban & Rural Planning',
-    'area.planning.description': 'Participate in development planning, zoning decisions, and infrastructure projects for your community.',
-    'area.healthcare.title': 'Healthcare Services',
-    'area.healthcare.description': 'Share feedback on healthcare policies, hospital services, and public health initiatives.',
-    'area.education.title': 'Education System',
-    'area.education.description': 'Contribute ideas for improving schools, curriculum, and educational access across Kenya.',
+    'area.budgeting.title': 'Budgets & Finance',
+    'area.budgeting.description':
+      'Review budgets, financial plans, and expenditure reports, and share your priorities.',
+    'area.planning.title': 'Planning & Development',
+    'area.planning.description':
+      'Engage with development plans, land-use decisions, and infrastructure proposals.',
+    'area.healthcare.title': 'Healthcare',
+    'area.healthcare.description':
+      'Provide feedback on healthcare services, policies, and public health initiatives.',
+    'area.education.title': 'Education',
+    'area.education.description':
+      'Contribute ideas on education systems, curriculum, and access to learning.',
     'area.transport.title': 'Transport & Infrastructure',
-    'area.transport.description': 'Help shape decisions on roads, public transit, and transport infrastructure development.',
+    'area.transport.description':
+      'Participate in discussions on transport systems and infrastructure development.',
 
     // Footer
     'footer.about': 'About',
@@ -137,13 +146,15 @@ const translations: Record<Language, Record<string, string>> = {
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
     'footer.accessibility': 'Accessibility',
-    'footer.copyright': '© 2025 bajetAI - iLabAfrica',
+    'footer.copyright':
+      '© 2025 bajetAI – iLabAfrica',
 
     // Errors
     'error.somethingWentWrong': 'Something went wrong',
-    'error.tryAgain': 'Try again',
+    'error.tryAgain': 'Please try again',
     'error.notFound': 'Not found',
   },
+
   sw: {
     // Navigation
     'nav.home': 'Nyumbani',
@@ -151,21 +162,21 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.participate': 'Shiriki',
     'nav.about': 'Kuhusu',
     'nav.contact': 'Wasiliana',
-    'nav.main': 'Urambazaji mkuu',
-    'nav.openMenu': 'Fungua menyu',
-    'nav.closeMenu': 'Funga menyu',
+    'nav.main': 'Urambazaji Mkuu',
+    'nav.openMenu': 'Fungua Menyu',
+    'nav.closeMenu': 'Funga Menyu',
 
     // Search
-    'search.placeholder': 'Tafuta hati...',
+    'search.placeholder': 'Tafuta hati zenye maslahi ya umma...',
     'search.label': 'Tafuta',
     'search.button': 'Tafuta',
 
     // Document
     'document.published': 'Imechapishwa',
-    'document.updated': 'Imeboreshwa',
+    'document.updated': 'Imesasishwa',
     'document.pages': 'kurasa',
     'document.summaryAvailable': 'Muhtasari wa AI Unapatikana',
-    'document.viewDocument': 'Angalia Hati',
+    'document.viewDocument': 'Tazama Hati',
     'document.readSummary': 'Soma Muhtasari',
     'document.downloadPdf': 'Pakua PDF',
     'document.share': 'Shiriki',
@@ -173,7 +184,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Summary
     'summary.title': 'Muhtasari Uliozalishwa na AI',
-    'summary.confidence': 'Uaminifu',
+    'summary.confidence': 'Kiwango cha Uaminifu',
     'summary.readingTime': 'dakika kusoma',
     'summary.language': 'Lugha ya Muhtasari',
     'summary.selectLanguage': 'Chagua lugha',
@@ -181,31 +192,31 @@ const translations: Record<Language, Record<string, string>> = {
     // Tabs
     'tabs.summary': 'Muhtasari',
     'tabs.fullDocument': 'Hati Kamili',
-    'tabs.comments': 'Maoni',
+    'tabs.feedback': 'Maoni ya Umma',
 
     // PDF Viewer
     'pdf.loading': 'Inapakia hati...',
-    'pdf.error': 'Imeshindwa kupakia PDF',
-    'pdf.downloadPrompt': 'Pakua PDF ili kuangalia kwenye simu',
-    'pdf.openInNewTab': 'Fungua Kwenye Kichupo Kipya',
+    'pdf.error': 'Imeshindwa kupakia hati',
+    'pdf.downloadPrompt': 'Pakua PDF ili kuisoma kwenye simu',
+    'pdf.openInNewTab': 'Fungua Kichupo Kipya',
 
     // Share
     'share.title': 'Shiriki Hati',
     'share.copyLink': 'Nakili Kiungo',
-    'share.linkCopied': 'Kiungo kimenakiliwa kwenye ubao wa kunakili!',
+    'share.linkCopied': 'Kiungo kimenakiliwa',
     'share.qrCode': 'Msimbo wa QR',
-    'share.social': 'Shiriki kwenye mitandao ya kijamii',
+    'share.social': 'Shiriki kupitia mitandao ya kijamii',
 
     // Filters
     'filter.all': 'Zote',
     'filter.published': 'Zilizochapishwa',
-    'filter.archived': 'Zimehifadhiwa',
+    'filter.archived': 'Zilizohifadhiwa',
     'filter.label': 'Chuja',
     'sort.label': 'Panga',
     'sort.newest': 'Mpya Kwanza',
     'sort.oldest': 'Za Zamani Kwanza',
-    'sort.titleAsc': 'Kichwa A-Z',
-    'sort.titleDesc': 'Kichwa Z-A',
+    'sort.titleAsc': 'Kichwa A–Z',
+    'sort.titleDesc': 'Kichwa Z–A',
 
     // Pagination
     'pagination.previous': 'Iliyotangulia',
@@ -216,50 +227,59 @@ const translations: Record<Language, Record<string, string>> = {
     'pagination.results': 'matokeo',
 
     // Status
-    'status.active': 'Inapatikana',
+    'status.active': 'Inatumika',
     'status.comingSoon': 'Inakuja Hivi Karibuni',
     'status.pending': 'Inasubiri',
-    'status.processing': 'Inashughulika',
+    'status.processing': 'Inachakatwa',
     'status.completed': 'Imekamilika',
     'status.failed': 'Imeshindwa',
 
     // Actions
     'action.notifyMe': 'Nijulishe',
-    'action.viewDocs': 'Angalia Hati',
+    'action.viewDocs': 'Tazama Hati',
     'action.back': 'Rudi',
-    'action.submit': 'Wasilisha',
+    'action.submitFeedback': 'Wasilisha Maoni',
     'action.cancel': 'Ghairi',
 
     // Coming Soon
     'comingSoon.title': 'Inakuja Hivi Karibuni',
-    'comingSoon.description': 'Tunafanya kazi kuleta eneo hili la ushiriki. Pata taarifa litakapozinduliwa.',
-    'comingSoon.expectedLaunch': 'Kuzinduliwa Inatarajiwa',
+    'comingSoon.description':
+      'Eneo hili la ushiriki bado linatengenezwa. Pata taarifa litakapopatikana.',
+    'comingSoon.expectedLaunch': 'Kuzinduliwa Kunatarajiwa',
     'comingSoon.emailPlaceholder': 'Weka barua pepe yako...',
-    'comingSoon.backToAreas': 'Rudi kwa Maeneo Yote ya Ushiriki',
-    'comingSoon.successMessage': 'Utajulishwa {area} litakapozinduliwa!',
-    'comingSoon.errorMessage': 'Imeshindwa kujisajili. Tafadhali jaribu tena.',
+    'comingSoon.backToAreas': 'Rudi kwenye Maeneo ya Ushiriki',
+    'comingSoon.successMessage':
+      'Utajulishwa eneo la {area} litakapopatikana.',
+    'comingSoon.errorMessage':
+      'Usajili haukufanikiwa. Tafadhali jaribu tena.',
 
     // Homepage
-    'home.hero.title': 'Kuimarisha Ushiriki wa Raia',
-    'home.hero.subtitle': 'Sauti Yako katika Maamuzi ya Serikali - Kutoka Mipango ya Sera hadi Afya, Elimu hadi Miundombinu',
+    'home.hero.title': 'Kuimarisha Ushiriki wa Umma',
+    'home.hero.subtitle':
+      'Shiriki na hati za maslahi ya umma, elewa masuala muhimu, na toa maoni yako',
     'home.hero.getStarted': 'Anza Kushiriki',
     'home.hero.learnMore': 'Jifunze Zaidi',
-    'home.areas.title': 'Maeneo ya Ushiriki Yanayofanya Kazi',
+    'home.areas.title': 'Maeneo ya Ushiriki',
     'home.stats.documents': 'Hati',
-    'home.stats.comments': 'Maoni',
-    'home.stats.users': 'Watumiaji',
+    'home.stats.feedback': 'Maoni',
+    'home.stats.users': 'Washiriki',
 
     // Participation Areas
     'area.budgeting.title': 'Bajeti na Fedha',
-    'area.budgeting.description': 'Kagua bajeti za serikali, mipango ya fedha, na ripoti za matumizi. Shiriki mapendeleo na mapendekezo yako.',
-    'area.planning.title': 'Mipango ya Mijini na Vijijini',
-    'area.planning.description': 'Shiriki katika mipango ya maendeleo, maamuzi ya eneo, na miradi ya miundombinu kwa jamii yako.',
-    'area.healthcare.title': 'Huduma za Afya',
-    'area.healthcare.description': 'Toa maoni kuhusu sera za afya, huduma za hospitali, na mipango ya afya ya umma.',
-    'area.education.title': 'Mfumo wa Elimu',
-    'area.education.description': 'Changia mawazo ya kuboresha shule, mtaala, na ufikiaji wa elimu nchini Kenya.',
+    'area.budgeting.description':
+      'Kagua bajeti, mipango ya fedha, na ripoti za matumizi, kisha toa mapendekezo yako.',
+    'area.planning.title': 'Mipango na Maendeleo',
+    'area.planning.description':
+      'Shiriki katika mipango ya maendeleo, matumizi ya ardhi, na miradi ya miundombinu.',
+    'area.healthcare.title': 'Afya',
+    'area.healthcare.description':
+      'Toa maoni kuhusu huduma za afya, sera, na mipango ya afya ya umma.',
+    'area.education.title': 'Elimu',
+    'area.education.description':
+      'Changia mawazo kuhusu mfumo wa elimu, mitaala, na upatikanaji wa elimu.',
     'area.transport.title': 'Usafiri na Miundombinu',
-    'area.transport.description': 'Saidia kubuni maamuzi kuhusu barabara, usafiri wa umma, na maendeleo ya miundombinu ya usafiri.',
+    'area.transport.description':
+      'Shiriki katika mijadala kuhusu mifumo ya usafiri na maendeleo ya miundombinu.',
 
     // Footer
     'footer.about': 'Kuhusu',
@@ -267,11 +287,12 @@ const translations: Record<Language, Record<string, string>> = {
     'footer.privacy': 'Faragha',
     'footer.terms': 'Masharti',
     'footer.accessibility': 'Ufikiaji',
-    'footer.copyright': '© 2025 bajetAI - Serikali ya Kenya',
+    'footer.copyright':
+      '© 2025 bajetAI – iLabAfrica',
 
     // Errors
-    'error.somethingWentWrong': 'Kuna kitu kimekosea',
-    'error.tryAgain': 'Jaribu tena',
+    'error.somethingWentWrong': 'Kuna hitilafu imetokea',
+    'error.tryAgain': 'Tafadhali jaribu tena',
     'error.notFound': 'Haijapatikana',
   },
 };
