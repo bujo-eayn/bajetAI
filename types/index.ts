@@ -10,7 +10,7 @@ export type DocumentStatus = 'processing' | 'published' | 'archived';
 
 export type DocumentCategory = 'budgeting' | 'planning' | 'healthcare' | 'education' | 'transport';
 
-export type CommentStatus = 'pending' | 'approved' | 'rejected';
+export type FeedbackStatus = 'pending' | 'approved' | 'rejected';
 
 export type ExtractionStatus = 'pending' | 'extracting' | 'completed' | 'completed_scanned' | 'failed';
 
@@ -39,8 +39,8 @@ export type SummarizationErrorType =
   | 'invalid_text'
   | 'unknown';
 
-// Comment categories (will be detected by AI)
-export type CommentCategory =
+// Feedback categories (will be detected by AI)
+export type FeedbackCategory =
   | 'Education'
   | 'Healthcare'
   | 'Infrastructure'
@@ -163,7 +163,7 @@ export type Database = {
           extraction_duration_ms?: number | null;
         };
       };
-      comments: {
+      feedback: {
         Row: {
           id: string;
           document_id: string;
@@ -172,7 +172,7 @@ export type Database = {
           content: string;
           category: string | null;
           sentiment: string | null;
-          status: CommentStatus;
+          status: FeedbackStatus;
           created_at: string;
         };
         Insert: {
@@ -183,7 +183,7 @@ export type Database = {
           content: string;
           category?: string | null;
           sentiment?: string | null;
-          status?: CommentStatus;
+          status?: FeedbackStatus;
           created_at?: string;
         };
         Update: {
@@ -194,17 +194,17 @@ export type Database = {
           content?: string;
           category?: string | null;
           sentiment?: string | null;
-          status?: CommentStatus;
+          status?: FeedbackStatus;
           created_at?: string;
         };
       };
-      comment_summaries: {
+      feedback_summaries: {
         Row: {
           id: string;
           document_id: string;
           category: string;
           summary: string;
-          comment_count: number;
+          feedback_count: number;
           created_at: string;
         };
         Insert: {
@@ -212,7 +212,7 @@ export type Database = {
           document_id: string;
           category: string;
           summary: string;
-          comment_count?: number;
+          feedback_count?: number;
           created_at?: string;
         };
         Update: {
@@ -220,7 +220,7 @@ export type Database = {
           document_id?: string;
           category?: string;
           summary?: string;
-          comment_count?: number;
+          feedback_count?: number;
           created_at?: string;
         };
       };
@@ -235,20 +235,20 @@ export type Database = {
 // Extract table row types
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Document = Database['public']['Tables']['documents']['Row'];
-export type Comment = Database['public']['Tables']['comments']['Row'];
-export type CommentSummary = Database['public']['Tables']['comment_summaries']['Row'];
+export type Feedback = Database['public']['Tables']['feedback']['Row'];
+export type FeedbackSummary = Database['public']['Tables']['feedback_summaries']['Row'];
 
 // Insert types (for creating new records)
 export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
 export type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
-export type CommentInsert = Database['public']['Tables']['comments']['Insert'];
-export type CommentSummaryInsert = Database['public']['Tables']['comment_summaries']['Insert'];
+export type FeedbackInsert = Database['public']['Tables']['feedback']['Insert'];
+export type FeedbackSummaryInsert = Database['public']['Tables']['feedback_summaries']['Insert'];
 
 // Update types (for updating existing records)
 export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 export type DocumentUpdate = Database['public']['Tables']['documents']['Update'];
-export type CommentUpdate = Database['public']['Tables']['comments']['Update'];
-export type CommentSummaryUpdate = Database['public']['Tables']['comment_summaries']['Update'];
+export type FeedbackUpdate = Database['public']['Tables']['feedback']['Update'];
+export type FeedbackSummaryUpdate = Database['public']['Tables']['feedback_summaries']['Update'];
 
 // ============================================================================
 // Extended Types (with relations)
@@ -258,15 +258,15 @@ export type DocumentWithUploader = Document & {
   uploader: Pick<Profile, 'id' | 'full_name' | 'email'>;
 };
 
-export type CommentWithDocument = Comment & {
+export type FeedbackWithDocument = Feedback & {
   document: Pick<Document, 'id' | 'title' | 'status'>;
 };
 
-export type DocumentWithCommentCount = Document & {
-  comment_count: number;
+export type DocumentWithFeedbackCount = Document & {
+  feedback_count: number;
 };
 
-export type CommentSummaryWithDocument = CommentSummary & {
+export type FeedbackSummaryWithDocument = FeedbackSummary & {
   document: Pick<Document, 'id' | 'title'>;
 };
 
@@ -308,7 +308,7 @@ export type SignupForm = {
   role: UserRole;
 };
 
-export type CommentForm = {
+export type FeedbackForm = {
   user_name: string;
   user_email?: string;
   content: string;
@@ -325,8 +325,8 @@ export type AIProcessingStatus = {
   error?: string;
 };
 
-export type CommentAnalysisResult = {
-  category: CommentCategory;
+export type FeedbackAnalysisResult = {
+  category: FeedbackCategory;
   sentiment?: 'positive' | 'negative' | 'neutral';
   confidence: number; // 0-1
 };

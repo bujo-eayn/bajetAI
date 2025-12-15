@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'bajetAI - Empowering Citizen Participation',
+    default: 'bajetAI - Enhancing Public Participation',
     template: '%s | bajetAI',
   },
-  description: 'AI-Powered Platform for Public Participation in Government Decisions - From Budgets to Planning, Healthcare to Education in Kenya',
-  keywords: ['citizen participation', 'public engagement', 'government transparency', 'Kenya', 'budget participation', 'civic tech', 'public consultation'],
+  description: 'An Agentic AI-Powered Platform for Enhancing Public Participation in Public Matters',
+  keywords: ['citizen participation', 'public engagement', 'government transparency', 'Kenya', 'budget participation', 'civic tech', 'public consultation', 'AI-powered platform', 'e-governance', 'public participation platform'],
   authors: [{ name: 'iLabAfrica' }],
   creator: 'bajetAI',
   publisher: 'iLabAfrica',
@@ -21,21 +21,21 @@ export const metadata: Metadata = {
     locale: 'en_KE',
     url: 'https://bajetai.vercel.app',
     siteName: 'bajetAI',
-    title: 'bajetAI - Empowering Citizen Participation',
-    description: 'AI-Powered Platform for Public Participation in Government Decisions - From Budgets to Planning, Healthcare to Education in Kenya',
+    title: 'bajetAI - Enhancing Public Participation',
+    description: 'An Agentic AI-Powered Platform for Enhancing Public Participation in Public Matters',
     images: [
       {
         url: '/og-image.png', // Add this image later
         width: 1200,
         height: 630,
-        alt: 'bajetAI - Citizen Participation Platform',
+        alt: 'bajetAI - Enhancing Public Participation',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'bajetAI - Empowering Citizen Participation',
-    description: 'AI-Powered Platform for Public Participation in Government Decisions in Kenya',
+    title: 'bajetAI - Enhancing Public Participation',
+    description: 'An Agentic AI-Powered Platform for Enhancing Public Participation in Public Matters',
     images: ['/og-image.png'],
     creator: '@bajetAI', // Update with actual Twitter handle
   },

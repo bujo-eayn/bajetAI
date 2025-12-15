@@ -15,7 +15,7 @@ export default function AboutPage() {
 
   return (
     <PublicLayout>
-      <div className="space-y-8">
+      <div className="space-y-12">
         {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbs} />
 
@@ -24,77 +24,73 @@ export default function AboutPage() {
           <h1 className="text-4xl font-bold tracking-tight">{t('nav.about')}</h1>
           <p className="text-xl text-muted-foreground">
             {language === 'en'
-              ? 'Empowering citizens to engage with government documents through AI-powered summaries and translations.'
-              : 'Kuwezesha raia kushiriki na hati za serikali kupitia muhtasari na tafsiri zinazotumia AI.'}
+              ? 'bajetAI is an agentic AI platform that enables meaningful public engagement with complex public-interest matters through summaries, translations, conversational access, and feedback intelligence.'
+              : 'bajetAI ni jukwaa la akili bandia linalowawezesha wananchi kushiriki kikamilifu katika masuala changamano ya umma kwa kutumia muhtasari, tafsiri, mazungumzo, na uchambuzi wa mrejesho.'}
           </p>
         </div>
 
-        {/* Content Sections */}
-        <div className="space-y-12 mt-12">
-          {/* Mission */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Target className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-2xl font-semibold">
-                {language === 'en' ? 'Our Mission' : 'Dhamira Yetu'}
-              </h2>
-            </div>
-            <p className="text-muted-foreground leading-relaxed">
-              {language === 'en'
-                ? 'bajetAI makes government documents accessible to all citizens by providing AI-powered summaries and translations. We believe that informed citizens make better decisions and contribute to stronger governance.'
-                : 'bajetAI inafanya hati za serikali zipatikane kwa raia wote kwa kutoa muhtasari na tafsiri zinazotumia AI. Tunaamini kuwa raia wenye taarifa hufanya maamuzi bora na kuchangia utawala imara.'}
-            </p>
-          </section>
+        {/* Mission */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Target className="h-6 w-6 text-primary" aria-hidden="true" />
+            <h2 className="text-2xl font-semibold">{language === 'en' ? 'Our Mission' : 'Dhamira Yetu'}</h2>
+          </div>
+          <p className="text-muted-foreground leading-relaxed">
+            {language === 'en'
+              ? 'bajetAI empowers the public and organizations to engage effectively with public-interest matters using AI-powered summaries, translations, interactive tools, and feedback intelligence. Informed participation leads to better outcomes for society.'
+              : 'bajetAI huwawezesha wananchi na mashirika kushiriki kikamilifu katika masuala ya umma kwa kutumia muhtasari, tafsiri, zana shirikishi, na uchambuzi wa mrejesho unaotumia akili bandia (AI). Ushiriki wenye uelewa huleta matokeo bora kwa jamii.'}
+          </p>
+        </section>
 
-          {/* What We Do */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-2xl font-semibold">
-                {language === 'en' ? 'What We Do' : 'Tunachofanya'}
-              </h2>
-            </div>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p>
+        {/* What We Do */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
+            <h2 className="text-2xl font-semibold">{language === 'en' ? 'What We Do' : 'Tunachofanya'}</h2>
+          </div>
+          <div className="space-y-4 text-muted-foreground leading-relaxed">
+            <p>
+              {language === 'en'
+                ? 'We simplify complex public-interest documents and provide tools that allow the public and organizations to engage meaningfully:'
+                : 'Tunarahisisha hati changamano za umma na kutoa zana zinazowawezesha wananchi na mashirika kushiriki kikamilifu:'}
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>
                 {language === 'en'
-                  ? 'We process government documents to provide:'
-                  : 'Tunachakata hati za serikali ili kutoa:'}
-              </p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>
-                  {language === 'en'
-                    ? 'AI-generated summaries in English and Swahili'
-                    : 'Muhtasari uliozalishwa na AI kwa Kiingereza na Kiswahili'}
-                </li>
-                <li>
-                  {language === 'en'
-                    ? 'Easy access to full documents with built-in PDF viewers'
-                    : 'Ufikiaji rahisi wa hati kamili zenye vionyeshi vya PDF vilivyojengwa'}
-                </li>
-                <li>
-                  {language === 'en'
-                    ? 'Search and filtering capabilities across document categories'
-                    : 'Uwezo wa kutafuta na kuchuja katika kategoria za hati'}
-                </li>
-              </ul>
-            </div>
-          </section>
+                  ? 'AI-generated summaries and translations in English and Swahili'
+                  : 'Muhtasari na tafsiri zinazozalishwa na AI kwa Kiingereza na Kiswahili'}
+              </li>
+              <li>
+                {language === 'en'
+                  ? 'Interactive access to full documents with built-in viewers'
+                  : 'Ufikiaji shirikishi wa hati kamili kupitia vionyeshi vilivyojengwa ndani'}
+              </li>
+              <li>
+                {language === 'en'
+                  ? 'Conversational tools that let users ask questions and get clear answers from documents'
+                  : 'Zana za mazungumzo zinazowawezesha watumiaji kuuliza maswali na kupata majibu wazi kutoka kwenye hati'}
+              </li>
+              <li>
+                {language === 'en'
+                  ? 'Feedback intelligence that summarizes public input by sentiment, topic, and key areas of interest'
+                  : 'Uchambuzi wa mrejesho unaofupisha maoni ya umma kwa mujibu wa hisia, mada, na maeneo muhimu ya kipaumbele'}
+              </li>
+            </ul>
+          </div>
+        </section>
 
-          {/* Who We Serve */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-2xl font-semibold">
-                {language === 'en' ? 'Who We Serve' : 'Tunawahudumia Nani'}
-              </h2>
-            </div>
-            <p className="text-muted-foreground leading-relaxed">
-              {language === 'en'
-                ? 'bajetAI serves all citizens who want to understand and engage with government policies, budgets, and planning documents. Whether you are a student, researcher, journalist, or concerned citizen, we provide the tools to make complex documents more accessible.'
-                : 'bajetAI inahudumia raia wote ambao wanataka kuelewa na kushiriki na sera za serikali, bajeti, na hati za mipango. Iwe wewe ni mwanafunzi, mtafiti, mwandishi wa habari, au raia mwenye wasiwasi, tunatoa zana za kufanya hati ngumu zipatikane zaidi.'}
-            </p>
-          </section>
-        </div>
+        {/* Who We Serve */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Users className="h-6 w-6 text-primary" aria-hidden="true" />
+            <h2 className="text-2xl font-semibold">{language === 'en' ? 'Who We Serve' : 'Tunawahudumia Nani'}</h2>
+          </div>
+          <p className="text-muted-foreground leading-relaxed">
+            {language === 'en'
+              ? 'bajetAI serves both the public and organizations seeking to understand, discuss, and contribute to matters of public interest. We make complex documents accessible, understandable, and participatory for all stakeholders.'
+              : 'bajetAI inawahudumia wananchi na mashirika yanayotaka kuelewa, kujadili, na kuchangia masuala ya umma. Tunafanya hati changamano zipatikane, zieleweke, na kushirikisha umma kwa pande zote.'}
+          </p>
+        </section>
       </div>
     </PublicLayout>
   );

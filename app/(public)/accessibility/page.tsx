@@ -16,20 +16,17 @@ export default function AccessibilityPage() {
   return (
     <PublicLayout>
       <div className="space-y-8">
-        {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbs} />
 
-        {/* Page Header */}
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">{t('footer.accessibility')}</h1>
           <p className="text-xl text-muted-foreground">
             {language === 'en'
-              ? 'Our commitment to making government information accessible to everyone.'
-              : 'Dhamira yetu ya kufanya taarifa za serikali zipatikane kwa kila mtu.'}
+              ? 'Our commitment to making information on public matters accessible to everyone.'
+              : 'Dhamira yetu ni kufanya taarifa kuhusu masuala ya umma zipatikane kwa kila mtu.'}
           </p>
         </div>
 
-        {/* Accessibility Features */}
         <div className="space-y-8 mt-12">
           <section className="space-y-4">
             <div className="flex items-center gap-3">
@@ -42,8 +39,8 @@ export default function AccessibilityPage() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               {language === 'en'
-                ? 'bajetAI provides content in both English and Swahili, with AI-powered translations to ensure all citizens can access government information in their preferred language.'
-                : 'bajetAI inatoa maudhui kwa Kiingereza na Kiswahili, pamoja na tafsiri zinazotumia AI kuhakikisha raia wote wanaweza kufikia taarifa za serikali katika lugha wanayopendelea.'}
+                ? 'bajetAI provides content in English and Swahili, with AI-powered translations to ensure access for diverse audiences.'
+                : 'bajetAI inatoa maudhui kwa Kiingereza na Kiswahili, pamoja na tafsiri zinazotumia AI kuhakikisha ufikiaji kwa hadhira mbalimbali.'}
             </p>
           </section>
 
@@ -58,8 +55,8 @@ export default function AccessibilityPage() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               {language === 'en'
-                ? 'Our platform is designed to work seamlessly with screen readers and assistive technologies, with proper ARIA labels and semantic HTML.'
-                : 'Jukwaa letu limeundwa kufanya kazi vizuri na wasomaji wa skrini na teknolojia za kusaidia, pamoja na lebo sahihi za ARIA na HTML ya kimantiki.'}
+                ? 'The platform works with screen readers and assistive technologies using proper ARIA labels and semantic HTML.'
+                : 'Jukwaa linafanya kazi na wasomaji wa skrini na teknolojia za kusaidia, likitumia lebo sahihi za ARIA na HTML ya kimantiki.'}
             </p>
           </section>
 
@@ -74,8 +71,8 @@ export default function AccessibilityPage() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               {language === 'en'
-                ? 'All interactive elements can be accessed and operated using keyboard navigation, ensuring users who cannot use a mouse can navigate effectively.'
-                : 'Vipengele vyote vya mwingiliano vinaweza kufikiwa na kuendeshwa kwa kutumia urambazaji wa kibodi, kuhakikisha watumiaji ambao hawawezi kutumia kipanya wanaweza kusafiri kwa ufanisi.'}
+                ? 'All interactive elements are operable via keyboard navigation for users who cannot use a mouse.'
+                : 'Vipengele vyote vya mwingiliano vinaweza kuendeshwa kwa kutumia kibodi, kuhakikisha ufikiaji kwa watumiaji wasioweza kutumia kipanya.'}
             </p>
           </section>
 
@@ -90,19 +87,17 @@ export default function AccessibilityPage() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               {language === 'en'
-                ? 'Our interface uses high contrast colors and clear typography to ensure readability for users with visual impairments.'
-                : 'Kiolesura chetu kinatumia rangi za utofautishaji wa juu na maandishi wazi kuhakikisha kusoma kwa watumiaji wenye matatizo ya kuona.'}
+                ? 'High-contrast colors and clear typography ensure readability for users with visual impairments.'
+                : 'Rangi zenye utofauti wa juu na maandishi wazi zinahakikisha usomaji kwa watumiaji wenye matatizo ya kuona.'}
             </p>
           </section>
 
           <section className="space-y-4 mt-12">
-            <h3 className="text-xl font-semibold">
-              {language === 'en' ? 'Feedback' : 'Maoni'}
-            </h3>
+            <h3 className="text-xl font-semibold">{language === 'en' ? 'Feedback' : 'Maoni'}</h3>
             <p className="text-muted-foreground leading-relaxed">
               {language === 'en'
-                ? 'We are continuously working to improve accessibility. If you encounter any barriers or have suggestions, please contact us at accessibility@bajetai.go.ke'
-                : 'Tunaendelea kuboresha ufikiaji. Ikiwa unakutana na vizuizi vyovyote au una mapendekezo, tafadhali wasiliana nasi kwa accessibility@bajetai.go.ke'}
+                ? 'We continuously improve accessibility. If you encounter barriers or have suggestions, contact us at accessibility@bajetai.go.ke'
+                : 'Tunaendelea kuboresha ufikiaji. Ikiwa unakutana na vizuizi au una mapendekezo, tafadhali wasiliana nasi kwa accessibility@bajetai.go.ke'}
             </p>
           </section>
         </div>

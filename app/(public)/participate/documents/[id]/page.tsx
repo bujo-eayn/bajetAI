@@ -155,9 +155,9 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             <TabsTrigger value="document">
               {t('tabs.fullDocument')}
             </TabsTrigger>
-            <TabsTrigger value="comments" disabled className="gap-2">
+            <TabsTrigger value="feedback" disabled className="gap-2">
               <MessageSquare className="h-4 w-4" aria-hidden="true" />
-              {t("tabs.comments")}
+              {t("tabs.feedback")}
               <Badge variant="secondary" className="ml-1 text-xs">{t("status.comingSoon")}</Badge>
             </TabsTrigger>
           </TabsList>
@@ -176,17 +176,17 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             <PDFViewer fileUrl={document.fileUrl} title={document.title} />
           </TabsContent>
 
-          {/* Comments Tab (Placeholder) */}
-          <TabsContent value="comments" className="space-y-4">
+          {/* Public Feedback Tab (Placeholder) */}
+          <TabsContent value="feedback" className="space-y-4">
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
               <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground" aria-hidden="true" />
               <h3 className="mb-2 text-lg font-semibold">
-                {language === 'en' ? 'Comments Coming Soon' : 'Maoni Yanakuja Hivi Karibuni'}
+                {language === 'en' ? 'Public Feedback Coming Soon' : 'Maoni ya Umma Yanakuja Hivi Karibuni'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {language === 'en'
-                  ? 'Public commenting will be available in a future update.'
-                  : 'Kutoa maoni kwa umma kutapatikana katika sasisho la baadaye.'}
+                  ? 'Public feedback submission will be available in a future update.'
+                  : 'Kuwasilisha maoni ya umma kutapatikana katika sasisho la baadaye.'}
               </p>
             </div>
           </TabsContent>
