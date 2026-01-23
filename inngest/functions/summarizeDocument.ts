@@ -1,20 +1,22 @@
 /**
  * Inngest Function: Summarize Document
  *
- * Background job that summarizes extracted text from PDFs using Hugging Face AI.
+ * Background job that summarizes extracted text from PDFs using AI.
  * This function is triggered automatically after successful PDF text extraction.
  *
  * Features:
  * - Multi-step processing with progress tracking
- * - Intelligent chunking for large documents
+ * - Intelligent document preprocessing based on document type
+ * - GPT-4o-mini with 128K context window
+ * - TOC-based section detection and filtering
  * - Error handling with retry logic
- * - Fallback to extractive summarization
  * - Database updates throughout process
  */
 
 import { inngest } from '@/lib/inngest/client';
 import { createAdminClient } from '@/lib/supabase/server';
 import { summarizeDocument } from '@/lib/services/summarizationService';
+import type { DocumentType } from '@/lib/utils/documentPreprocessor';
 import type { SummarizationEventPayload, SummarizationErrorType } from '@/types';
 
 /**
@@ -143,8 +145,8 @@ export default inngest.createFunction(
       `[Summarization] Starting summarization for document ${documentId}`
     );
 
-    // Step 1: Validate document and fetch extracted text
-    const { document, extractedText } = await step.run(
+    // Step 1: Validate document and fetch extracted text (and pages if available)
+    const { document, extractedText, extractedPages, documentType } = await step.run(
       'validate-and-fetch-text',
       async () => {
         const supabase = createAdminClient();
@@ -161,7 +163,7 @@ export default inngest.createFunction(
         }
 
         // Check if extraction completed successfully
-        if (doc.extraction_status !== 'completed') {
+        if (doc.extraction_status !== 'completed' && doc.extraction_status !== 'completed_scanned') {
           throw new Error(
             `Document extraction not completed (status: ${doc.extraction_status})`
           );
@@ -171,7 +173,7 @@ export default inngest.createFunction(
           throw new Error('No extracted text URL provided');
         }
 
-        // Download extracted text from storage
+        // Download extracted text from storage (merged text for backward compatibility)
         const { data: textData, error: downloadError } = await supabase.storage
           .from('extracted-text')
           .download(extractedTextUrl);
@@ -186,7 +188,34 @@ export default inngest.createFunction(
           `[Summarization] Fetched ${text.length} characters from ${extractedTextUrl}`
         );
 
-        return { document: doc, extractedText: text };
+        // Try to fetch pages JSON for page-based preprocessing (NEW)
+        let pages: string[] | null = null;
+        const pagesUrl = extractedTextUrl.replace('.txt', '_pages.json');
+
+        try {
+          const { data: pagesData, error: pagesError } = await supabase.storage
+            .from('extracted-text')
+            .download(pagesUrl);
+
+          if (!pagesError && pagesData) {
+            const pagesJson = await pagesData.text();
+            pages = JSON.parse(pagesJson);
+            console.log(
+              `[Summarization] Fetched ${pages?.length} pages from ${pagesUrl}`
+            );
+          }
+        } catch (e) {
+          // Pages file not available - will use merged text
+          console.log(`[Summarization] Pages file not available, using merged text`);
+        }
+
+        // Extract document type for preprocessing (CBROP, CFSP, ADP)
+        const documentType = doc.document_type as DocumentType | null;
+        if (documentType) {
+          console.log(`[Summarization] Document type: ${documentType}`);
+        }
+
+        return { document: doc, extractedText: text, extractedPages: pages, documentType };
       }
     );
 
@@ -216,13 +245,31 @@ export default inngest.createFunction(
       console.log(`[Summarization] Text quality check passed: ${extractedText.length} chars`);
     });
 
-    // Step 4: Perform summarization
+    // Step 4: Perform summarization (with optional preprocessing based on document type)
     const result = await step.run('perform-summarization', async () => {
       const startTime = Date.now();
 
       try {
-        const summaryResult = await summarizeDocument(extractedText);
+        // Pass document type and pages for intelligent preprocessing
+        // Page-based preprocessing is more accurate for TOC detection
+        const summaryResult = await summarizeDocument(
+          extractedText,
+          documentType || undefined,
+          extractedPages // Pass pages array for page-based preprocessing
+        );
         const duration = Date.now() - startTime;
+
+        // Log preprocessing results if available
+        if (summaryResult.preprocessing) {
+          const prep = summaryResult.preprocessing;
+          console.log(
+            `[Summarization] Preprocessing completed: ` +
+            `TOC success: ${prep.tocParseSuccess}, ` +
+            `Reduction: ${prep.reductionPercent?.toFixed(1)}%, ` +
+            `Sections kept: ${prep.sectionsKept?.length || 0}, ` +
+            `Sections removed: ${prep.sectionsRemoved?.length || 0}`
+          );
+        }
 
         console.log(
           `[Summarization] Summarization completed in ${duration}ms. ` +
@@ -263,6 +310,9 @@ export default inngest.createFunction(
         ? (result.actualLength / result.targetLength) * 100
         : null;
 
+      // Prepare preprocessing metadata for database
+      const preprocessing = result.preprocessing;
+
       const { error } = await supabase
         .from('documents')
         .update({
@@ -281,6 +331,15 @@ export default inngest.createFunction(
           summary_target_length: result.targetLength || null,
           summary_actual_length: result.actualLength || null,
           summary_coverage_percent: coveragePercent,
+          // Preprocessing metadata (from document type-aware preprocessing)
+          preprocessing_toc_success: preprocessing?.tocParseSuccess ?? null,
+          preprocessing_reduction_percent: preprocessing?.reductionPercent ?? null,
+          preprocessing_sections_kept: preprocessing?.sectionsKept ?? null,
+          preprocessing_sections_removed: preprocessing?.sectionsRemoved ?? null,
+          preprocessing_unmatched_entries: preprocessing?.unmatchedTocEntries ?? null,
+          preprocessing_completed_at: preprocessing?.tocParseSuccess !== undefined
+            ? new Date().toISOString()
+            : null,
         })
         .eq('id', documentId);
 

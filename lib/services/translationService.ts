@@ -104,7 +104,7 @@ export async function translateText(
           },
         ],
         temperature: 0.3, // Low temperature for accurate translation
-        max_tokens: Math.ceil(text.length * 2), // Translations can be longer
+        max_tokens: Math.min(Math.ceil(text.length * 2), 4000), // Cap at 4000 for gpt-3.5-turbo (max 4096)
       },
       {
         signal: controller.signal as any,

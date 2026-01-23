@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const title = formData.get('title') as string;
     const category = formData.get('category') as string;
+    const documentType = formData.get('documentType') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -58,13 +59,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate category
+    // Validate category (participation area)
     const validCategories = ['budgeting', 'planning', 'healthcare', 'education', 'transport'];
     if (!category || !validCategories.includes(category)) {
       return NextResponse.json(
         { error: 'Valid participation area is required' },
         { status: 400 }
       );
+    }
+
+    // Validate document type (CBROP, CFSP, ADP)
+    // Only required for budgeting category documents
+    const validDocumentTypes = ['CBROP', 'CFSP', 'ADP'];
+    if (category === 'budgeting') {
+      if (!documentType || !validDocumentTypes.includes(documentType)) {
+        return NextResponse.json(
+          {
+            error: 'Document type is required for budgeting documents. Must be CBROP, CFSP, or ADP.',
+            validTypes: validDocumentTypes
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate file type
@@ -145,6 +161,7 @@ export async function POST(request: NextRequest) {
         file_size: file.size,
         uploaded_by: user.id,
         category: category,
+        document_type: category === 'budgeting' ? documentType : null, // Document type only for budgeting docs
         status: 'processing',
         processed: false,
         extraction_status: 'pending', // Phase 4: Initial extraction status
