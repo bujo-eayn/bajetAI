@@ -115,14 +115,70 @@ export default inngest.createFunction(
 
     console.log(`[Embeddings] Starting embedding generation for document ${documentId}`);
 
-    // Step 1: Check if embedding service is available
+    // Step 1: Check idempotency FIRST (before any expensive operations)
+    const shouldProcess = await step.run('check-idempotency', async () => {
+      const supabase = createAdminClient();
+
+      // Check document status
+      const { data: doc, error: docError } = await supabase
+        .from('documents')
+        .select('embedding_status, chat_enabled')
+        .eq('id', documentId)
+        .single();
+
+      if (docError || !doc) {
+        throw new Error(`Document not found: ${documentId}`);
+      }
+
+      // Already completed - skip entirely
+      if (doc.embedding_status === 'completed' && doc.chat_enabled) {
+        console.log(`[Embeddings] Document ${documentId} already completed, skipping`);
+        return false;
+      }
+
+      // If processing, check if embeddings already exist (handles retry scenarios)
+      if (doc.embedding_status === 'processing') {
+        const { count } = await supabase
+          .from('document_embeddings')
+          .select('*', { count: 'exact', head: true })
+          .eq('document_id', documentId);
+
+        if (count && count > 0) {
+          console.log(`[Embeddings] Document ${documentId} has ${count} embeddings, marking complete`);
+          await supabase
+            .from('documents')
+            .update({
+              embedding_status: 'completed',
+              embedding_chunk_count: count,
+              embedding_completed_at: new Date().toISOString(),
+              chat_enabled: true,
+            })
+            .eq('id', documentId);
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Early exit if already processed
+    if (!shouldProcess) {
+      return {
+        documentId,
+        success: true,
+        message: 'Document already has embeddings',
+        skipped: true,
+      };
+    }
+
+    // Step 2: Check if embedding service is available
     await step.run('check-service-availability', async () => {
       if (!isEmbeddingServiceAvailable()) {
         throw new Error('OpenAI API key not configured. Embedding service unavailable.');
       }
     });
 
-    // Step 2: Fetch document and extracted text
+    // Step 3: Fetch document and extracted text
     const { document, extractedText, extractedPages, documentType } = await step.run(
       'fetch-document-and-text',
       async () => {
@@ -137,12 +193,6 @@ export default inngest.createFunction(
 
         if (docError || !doc) {
           throw new Error(`Document not found: ${documentId}`);
-        }
-
-        // Check if already processed
-        if (doc.embedding_status === 'completed' && doc.chat_enabled) {
-          console.log(`[Embeddings] Document ${documentId} already has embeddings, skipping`);
-          return { document: doc, extractedText: null, extractedPages: null, documentType: null };
         }
 
         // Check extraction status
@@ -197,17 +247,7 @@ export default inngest.createFunction(
       }
     );
 
-    // Early exit if already processed
-    if (!extractedText) {
-      return {
-        documentId,
-        success: true,
-        message: 'Document already has embeddings',
-        skipped: true,
-      };
-    }
-
-    // Step 3: Update status to processing
+    // Step 4: Update status to processing
     await step.run('update-status-processing', async () => {
       const supabase = createAdminClient();
 
@@ -226,7 +266,7 @@ export default inngest.createFunction(
       }
     });
 
-    // Step 4: Create chunks using section-based chunker
+    // Step 5: Create chunks using section-based chunker
     const chunks = await step.run('create-chunks', async () => {
       let chunkResult;
 
@@ -280,25 +320,39 @@ export default inngest.createFunction(
       };
     }
 
-    // Step 5: Generate embeddings
-    const embeddingResult = await step.run('generate-embeddings', async () => {
-      const result = await generateChunkEmbeddings(chunks.chunks);
+    // Step 6: Generate embeddings AND store them in the same step
+    // IMPORTANT: We combine generation and storage to avoid passing huge embedding arrays between steps
+    // (Inngest has a step output size limit - the embeddings array is too large)
+    const result = await step.run('generate-and-store-embeddings', async () => {
+      const supabase = createAdminClient();
 
-      console.log(
-        `[Embeddings] Generated ${result.embeddings.length} embeddings ` +
-          `(${result.totalTokens} tokens, ${result.durationMs}ms)`
-      );
+      // Double-check no embeddings exist (handles race conditions)
+      const { count: existingCount } = await supabase
+        .from('document_embeddings')
+        .select('*', { count: 'exact', head: true })
+        .eq('document_id', documentId);
 
-      if (result.errors.length > 0) {
-        console.warn(`[Embeddings] ${result.errors.length} embedding errors`);
+      if (existingCount && existingCount > 0) {
+        console.log(`[Embeddings] Found ${existingCount} existing embeddings, skipping generation`);
+        return {
+          alreadyExists: true,
+          chunkCount: existingCount,
+          totalTokens: 0,
+          durationMs: 0,
+        };
       }
 
-      return result;
-    });
+      // Generate embeddings
+      const embeddingResult = await generateChunkEmbeddings(chunks.chunks);
 
-    // Step 6: Store embeddings in database
-    await step.run('store-embeddings', async () => {
-      const supabase = createAdminClient();
+      console.log(
+        `[Embeddings] Generated ${embeddingResult.embeddings.length} embeddings ` +
+          `(${embeddingResult.totalTokens} tokens, ${embeddingResult.durationMs}ms)`
+      );
+
+      if (embeddingResult.errors.length > 0) {
+        console.warn(`[Embeddings] ${embeddingResult.errors.length} embedding errors`);
+      }
 
       // Clear any existing embeddings for this document
       const { error: deleteError } = await supabase
@@ -310,39 +364,46 @@ export default inngest.createFunction(
         console.warn('[Embeddings] Failed to clear existing embeddings:', deleteError);
       }
 
-      // Prepare embedding records
-      const embeddingRecords = embeddingResult.embeddings.map((emb, idx) => {
-        const chunk = chunks.chunks.find((c) => c.chunkIndex === emb.chunkIndex);
-        return {
-          document_id: documentId,
-          chunk_index: emb.chunkIndex,
-          chunk_text: chunk?.content || '',
-          embedding: `[${emb.embedding.join(',')}]`, // pgvector format
-          section_name: chunk?.sectionName || null,
-          section_priority: chunk?.sectionPriority || null,
-          page_number: chunk?.pageNumbers[0] || null,
-          start_char: chunk?.startChar || 0,
-          end_char: chunk?.endChar || 0,
-          token_count: emb.tokenCount,
-        };
-      });
-
-      // Insert in batches to avoid payload size limits
+      // Prepare and store embedding records in batches
       const BATCH_SIZE = 50;
-      for (let i = 0; i < embeddingRecords.length; i += BATCH_SIZE) {
-        const batch = embeddingRecords.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < embeddingResult.embeddings.length; i += BATCH_SIZE) {
+        const batchEmbeddings = embeddingResult.embeddings.slice(i, i + BATCH_SIZE);
+
+        const embeddingRecords = batchEmbeddings.map((emb) => {
+          const chunk = chunks.chunks.find((c) => c.chunkIndex === emb.chunkIndex);
+          return {
+            document_id: documentId,
+            chunk_index: emb.chunkIndex,
+            chunk_text: chunk?.content || '',
+            embedding: `[${emb.embedding.join(',')}]`, // pgvector format
+            section_name: chunk?.sectionName || null,
+            section_priority: chunk?.sectionPriority || null,
+            page_number: chunk?.pageNumbers[0] || null,
+            start_char: chunk?.startChar || 0,
+            end_char: chunk?.endChar || 0,
+            token_count: emb.tokenCount,
+          };
+        });
 
         const { error: insertError } = await supabase
           .from('document_embeddings')
-          .insert(batch);
+          .insert(embeddingRecords);
 
         if (insertError) {
-          console.error(`[Embeddings] Failed to insert batch ${i / BATCH_SIZE + 1}:`, insertError);
+          console.error(`[Embeddings] Failed to insert batch ${Math.floor(i / BATCH_SIZE) + 1}:`, insertError);
           throw new Error(`Failed to store embeddings: ${insertError.message}`);
         }
       }
 
-      console.log(`[Embeddings] Stored ${embeddingRecords.length} embeddings in database`);
+      console.log(`[Embeddings] Stored ${embeddingResult.embeddings.length} embeddings in database`);
+
+      // Return only metadata (NOT the embeddings array - it's too large for Inngest)
+      return {
+        alreadyExists: false,
+        chunkCount: embeddingResult.embeddings.length,
+        totalTokens: embeddingResult.totalTokens,
+        durationMs: embeddingResult.durationMs,
+      };
     });
 
     // Step 7: Update document status and enable chat
@@ -353,9 +414,9 @@ export default inngest.createFunction(
         .from('documents')
         .update({
           embedding_status: 'completed',
-          embedding_chunk_count: embeddingResult.embeddings.length,
+          embedding_chunk_count: result.chunkCount,
           embedding_completed_at: new Date().toISOString(),
-          embedding_duration_ms: embeddingResult.durationMs,
+          embedding_duration_ms: result.durationMs,
           embedding_error: null,
           embedding_error_type: null,
           chat_enabled: true,
@@ -367,15 +428,16 @@ export default inngest.createFunction(
         throw new Error(`Failed to enable chat: ${error.message}`);
       }
 
-      console.log(`[Embeddings] Chat enabled for document ${documentId}`);
+      console.log(`[Embeddings] Chat enabled for document ${documentId}${result.alreadyExists ? ' (used existing embeddings)' : ''}`);
     });
 
     return {
       documentId,
       success: true,
-      chunkCount: embeddingResult.embeddings.length,
-      totalTokens: embeddingResult.totalTokens,
-      durationMs: embeddingResult.durationMs,
+      chunkCount: result.chunkCount,
+      totalTokens: result.totalTokens,
+      durationMs: result.durationMs,
+      skipped: result.alreadyExists,
     };
   }
 );

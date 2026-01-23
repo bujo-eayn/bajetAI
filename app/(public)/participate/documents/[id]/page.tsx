@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDate, formatFileSize } from '@/lib/i18n/formatters';
 import { FileText, Calendar, Download, MessageSquare } from 'lucide-react';
+import { ChatInterface } from '@/components/chat';
 
 interface Document {
   id: string;
@@ -24,6 +25,8 @@ interface Document {
   summaryEn?: string | null;
   summarySw?: string | null;
   summaryConfidence?: number;
+  documentType?: string;
+  chatEnabled?: boolean;
   uploader?: {
     fullName: string;
     role: string;
@@ -142,6 +145,11 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
                 </a>
               </Button>
               <ShareButton url={documentUrl} title={document.title} />
+              <ChatInterface
+                documentId={document.id}
+                documentTitle={document.title}
+                documentType={document.documentType}
+              />
             </div>
           </div>
         </div>

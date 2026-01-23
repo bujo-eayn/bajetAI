@@ -49,6 +49,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       summaryGeneratedAt: data.summary_completed_at,
       translationConfidence: data.translation_confidence,
       translationGeneratedAt: data.translation_completed_at,
+      documentType: data.document_type,
+      chatEnabled: data.chat_enabled || false,
       uploader: {
         fullName: data.uploader?.full_name || 'Government Official',
         role: data.uploader?.role || 'official',

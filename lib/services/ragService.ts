@@ -36,8 +36,10 @@ const TOP_K_CHUNKS = 5;
 
 /**
  * Minimum similarity threshold for retrieval
+ * Note: Lower threshold (0.5) to catch more loosely related content
+ * OpenAI embeddings typically need lower thresholds than other models
  */
-const SIMILARITY_THRESHOLD = 0.65;
+const SIMILARITY_THRESHOLD = 0.5;
 
 /**
  * Maximum tokens for response
