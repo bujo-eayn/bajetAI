@@ -9,6 +9,7 @@ import { DocumentCard } from '@/components/organisms/DocumentCard';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText } from 'lucide-react';
+import {Suspense} from "react";
 
 interface Document {
   id: string;
@@ -75,6 +76,7 @@ export default function BudgetingPage() {
   ];
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <PublicLayout>
       <div className="space-y-8">
         {/* Breadcrumb */}
@@ -133,6 +135,7 @@ export default function BudgetingPage() {
           </div>
         )}
       </div>
-    </PublicLayout>
+      </PublicLayout>
+    </Suspense>
   );
 }

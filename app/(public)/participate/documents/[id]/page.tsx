@@ -145,11 +145,13 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
                 </a>
               </Button>
               <ShareButton url={documentUrl} title={document.title} />
-              <ChatInterface
-                documentId={document.id}
-                documentTitle={document.title}
-                documentType={document.documentType}
-              />
+              {document.chatEnabled && (
+                <ChatInterface
+                  documentId={document.id}
+                  documentTitle={document.title}
+                  documentType={document.documentType}
+                />
+              )}
             </div>
           </div>
         </div>
