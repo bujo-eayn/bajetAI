@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Menu, X, FileText } from 'lucide-react';
 import { LanguageToggle } from '@/components/molecules/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -61,6 +62,11 @@ export function PublicHeader() {
 
         {/* Right Section */}
         <div className="ml-auto flex items-center gap-4">
+          <Link href="/beta" aria-label={t('beta.navTooltip')}>
+            <Badge variant="warning" className="cursor-pointer font-bold tracking-widest text-xs px-2.5 py-0.5 rounded-full">
+              {t('beta.tag')}
+            </Badge>
+          </Link>
           <LanguageToggle />
 
           {/* Mobile Menu */}
@@ -89,14 +95,24 @@ export function PublicHeader() {
                       "px-4 py-3 text-lg font-medium transition-colors rounded-lg",
                       "hover:bg-primary/10 hover:text-primary",
                       "min-h-[44px] flex items-center",
-                      isActive(item.href) 
-                        ? "bg-primary/10 text-primary" 
+                      isActive(item.href)
+                        ? "bg-primary/10 text-primary"
                         : "text-muted-foreground"
                     )}
                   >
                     {item.label}
                   </Link>
                 ))}
+                <Link
+                  href="/beta"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 min-h-[44px] flex items-center gap-2 text-muted-foreground hover:text-primary"
+                >
+                  <Badge variant="warning" className="font-bold tracking-widest text-xs px-2.5 py-0.5 rounded-full">
+                    {t('beta.tag')}
+                  </Badge>
+                  <span className="text-sm font-medium">{t('beta.pageTitle')}</span>
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>

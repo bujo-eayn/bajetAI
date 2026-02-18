@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { PublicLayout } from '@/components/templates/PublicLayout';
 import { Breadcrumb } from '@/components/molecules/Breadcrumb';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AlertTriangle } from 'lucide-react';
 
 export default function TermsPage() {
   const { t, language } = useLanguage();
@@ -16,6 +18,17 @@ export default function TermsPage() {
     <PublicLayout>
       <div className="space-y-8">
         <Breadcrumb items={breadcrumbs} />
+
+        {/* Beta Notice */}
+        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-muted-foreground">
+            {t('beta.bannerText')}{' '}
+            <Link href="/beta" className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
+              {t('beta.bannerLink')}
+            </Link>
+          </p>
+        </div>
 
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">{t('footer.terms')}</h1>
