@@ -14,7 +14,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatSources } from './ChatSources';
 import { ChatWelcome } from './ChatWelcome';
-import { MessageSquare, AlertCircle, Loader2 } from 'lucide-react';
+import { MessageSquare, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/types';
 
 // Generate a UUID using crypto.randomUUID() with fallback
@@ -208,6 +208,15 @@ export function ChatInterface({
 
     return (
       <>
+        {/* AI Disclaimer */}
+        <div className="flex items-start gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground leading-snug">
+            <span className="font-semibold text-foreground">{t('chat.disclaimerTitle')}: </span>
+            {t('chat.disclaimer')}
+          </p>
+        </div>
+
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
