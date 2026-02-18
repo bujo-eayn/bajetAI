@@ -326,12 +326,12 @@ export const handleTranslationError = inngest.createFunction(
     id: 'handle-translation-error',
     name: 'Handle Translation Failure',
   },
-  { event: 'inngest/function.failed' },
+  {
+    event: 'inngest/function.failed',
+    // Filter at event level to avoid triggering for other functions
+    if: 'event.data.function_id == "translate-document"',
+  },
   async ({ event }) => {
-    // Only handle translation function failures
-    if (event.data.function_id !== 'translate-document') {
-      return;
-    }
 
     const documentId = event.data.event.data.documentId;
     const error = event.data.error;

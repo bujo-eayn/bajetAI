@@ -4,11 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { DocumentCategory } from '@/types';
 
+// Budget document types for intelligent preprocessing
+type BudgetDocumentType = 'CBROP' | 'CFSP' | 'ADP';
+
 export default function UploadPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('budgeting');
+  const [documentType, setDocumentType] = useState<BudgetDocumentType>('CFSP');
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -75,6 +79,10 @@ export default function UploadPage() {
       formData.append('file', file);
       formData.append('title', title);
       formData.append('category', category);
+      // Include document type for budgeting documents (enables intelligent preprocessing)
+      if (category === 'budgeting') {
+        formData.append('documentType', documentType);
+      }
 
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
@@ -175,6 +183,32 @@ export default function UploadPage() {
             Select which area this document belongs to
           </p>
         </div>
+
+        {/* Document Type Selection (only for budgeting documents) */}
+        {category === 'budgeting' && (
+          <div>
+            <label
+              htmlFor="documentType"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Budget Document Type
+            </label>
+            <select
+              id="documentType"
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value as BudgetDocumentType)}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+              required
+            >
+              <option value="CFSP">CFSP - County Fiscal Strategy Paper</option>
+              <option value="CBROP">CBROP - County Budget Review and Outlook Paper</option>
+              <option value="ADP">ADP - Annual Development Plan</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              This helps the AI understand and summarize your document better
+            </p>
+          </div>
+        )}
 
         {/* File Upload Area */}
         <div>

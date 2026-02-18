@@ -6,7 +6,7 @@
  * comprehensive error handling.
  *
  * Features:
- * - GPT-3.5-Turbo (16k context window)
+ * - GPT-4o-mini (128k context window) - Updated from GPT-3.5-Turbo
  * - Structured prompts with markdown output
  * - Dynamic length calculation (10% rule)
  * - Token usage tracking
@@ -39,16 +39,16 @@ import {
 } from '../rateLimiter';
 import { calculateSummaryLength } from '../../utils/summaryLength';
 
-// OpenAI configuration
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-3.5-turbo-16k';
-const OPENAI_TIMEOUT_MS = parseInt(process.env.OPENAI_TIMEOUT_MS || '30000');
+// OpenAI configuration - Updated for GPT-4o-mini
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OPENAI_TIMEOUT_MS = parseInt(process.env.OPENAI_TIMEOUT_MS || '60000'); // Increased for larger documents
 const OPENAI_MAX_RETRIES = parseInt(process.env.OPENAI_MAX_RETRIES || '2');
 const OPENAI_TEMPERATURE = 0.7; // Balanced creativity
 
-// Context limits for GPT-3.5-Turbo-16k
-const CONTEXT_WINDOW = 16385; // Total tokens
-const MAX_OUTPUT_TOKENS = 4000; // Reserve for response
-const SAFETY_BUFFER = 500; // Additional safety margin
+// Context limits for GPT-4o-mini (128K context window)
+const CONTEXT_WINDOW = 128000; // Total tokens (128K)
+const MAX_OUTPUT_TOKENS = 16000; // Increased output capacity
+const SAFETY_BUFFER = 1000; // Larger safety margin for big documents
 
 /**
  * OpenAI Provider Implementation

@@ -47,7 +47,7 @@ async function downloadPDFFromStorage(fileName: string): Promise<Buffer> {
 }
 
 /**
- * Extract text from PDF using unpdf
+ * Extract text from PDF using unpdf (merged into single string)
  * unpdf handles all the complexity of PDF parsing across different environments
  */
 async function extractWithUnpdf(
@@ -74,6 +74,33 @@ async function extractWithUnpdf(
 }
 
 /**
+ * Extract text from PDF page-by-page using unpdf
+ * Returns an array of strings, one per page - better for TOC parsing
+ */
+async function extractWithUnpdfPageByPage(
+  pdfBuffer: Buffer
+): Promise<{ pages: string[]; pageCount: number }> {
+  try {
+    // Convert Buffer to Uint8Array for unpdf
+    const uint8Array = new Uint8Array(pdfBuffer);
+
+    // Load PDF document proxy
+    const pdf = await getDocumentProxy(uint8Array);
+
+    // Extract text from all pages (mergePages: false returns string[])
+    const { totalPages, text } = await extractText(pdf, { mergePages: false });
+
+    return {
+      pages: text as string[], // mergePages: false returns string[]
+      pageCount: totalPages,
+    };
+  } catch (error) {
+    console.error('unpdf page-by-page extraction error:', error);
+    throw error;
+  }
+}
+
+/**
  * Save extracted text to Supabase Storage as .txt file
  * Returns the storage path for database reference
  */
@@ -94,6 +121,33 @@ async function saveExtractedText(
 
   if (error) {
     console.error('Failed to save extracted text:', error);
+    throw new Error(`Storage upload failed: ${error.message}`);
+  }
+
+  return filePath;
+}
+
+/**
+ * Save extracted pages as JSON for page-based preprocessing
+ * Returns the storage path for database reference
+ */
+async function saveExtractedPages(
+  documentId: string,
+  pages: string[]
+): Promise<string> {
+  const supabase = createAdminClient();
+  const filePath = `${documentId}_pages.json`;
+  const jsonBuffer = Buffer.from(JSON.stringify(pages), 'utf-8');
+
+  const { error } = await supabase.storage
+    .from('extracted-text')
+    .upload(filePath, jsonBuffer, {
+      contentType: 'text/plain', // Use text/plain as Supabase may not allow application/json
+      upsert: true,
+    });
+
+  if (error) {
+    console.error('Failed to save extracted pages:', error);
     throw new Error(`Storage upload failed: ${error.message}`);
   }
 
@@ -229,9 +283,10 @@ export async function extractTextFromPDF(
       })
       .eq('id', documentId);
 
-    // 4. Extract text using unpdf
+    // 4. Extract text using unpdf (both merged and page-by-page)
     console.log(`Extracting text from PDF...`);
-    const { text, pageCount } = await extractWithUnpdf(pdfBuffer);
+    const { pages, pageCount } = await extractWithUnpdfPageByPage(pdfBuffer);
+    const text = pages.join('\n\n'); // Merge for backward compatibility
 
     // 5. Check if text is empty
     if (!text || text.trim().length === 0) {
@@ -256,9 +311,10 @@ export async function extractTextFromPDF(
       })
       .eq('id', documentId);
 
-    // 6. Save extracted text to storage
-    console.log(`Saving extracted text (${text.length} characters)...`);
+    // 6. Save extracted text to storage (both formats)
+    console.log(`Saving extracted text (${text.length} characters, ${pageCount} pages)...`);
     const textUrl = await saveExtractedText(documentId, text);
+    const pagesUrl = await saveExtractedPages(documentId, pages);
 
     // 7. Update database with success
     const durationMs = Date.now() - startTime;

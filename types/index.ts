@@ -410,6 +410,151 @@ export type TokenUsage = {
 export type AIProvider = 'openai' | 'huggingface' | 'extractive' | 'unknown';
 
 // ============================================================================
+// RAG Chat Types (Migration 014)
+// ============================================================================
+
+/**
+ * Embedding generation status for documents
+ */
+export type EmbeddingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+
+/**
+ * Embedding error types for debugging and retry logic
+ */
+export type EmbeddingErrorType =
+  | 'rate_limited'
+  | 'timeout'
+  | 'api_error'
+  | 'invalid_content'
+  | 'connection_error'
+  | 'unknown';
+
+/**
+ * Section priority levels from document preprocessor
+ */
+export type SectionPriority = 'critical' | 'high' | 'medium' | 'low';
+
+/**
+ * Detected language for chat queries
+ */
+export type DetectedLanguage = 'en' | 'sw';
+
+/**
+ * Embedding chunk with metadata for RAG retrieval
+ */
+export interface EmbeddingChunk {
+  id?: string;
+  documentId: string;
+  chunkIndex: number;
+  chunkText: string;
+  sectionName: string | null;
+  sectionPriority: SectionPriority | null;
+  pageNumber: number | null;
+  startChar: number;
+  endChar: number;
+  tokenCount: number;
+}
+
+/**
+ * Result from vector similarity search
+ */
+export interface EmbeddingSearchResult {
+  id: string;
+  chunkIndex: number;
+  chunkText: string;
+  sectionName: string | null;
+  sectionPriority: string | null;
+  pageNumber: number | null;
+  similarity: number;
+}
+
+/**
+ * Chat request from client
+ */
+export interface ChatRequest {
+  message: string;
+  sessionId: string;
+  conversationHistory?: ChatMessage[];
+}
+
+/**
+ * Chat message in conversation history
+ */
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Source citation for chat responses
+ */
+export interface ChatSource {
+  chunkIndex: number;
+  pageNumber: number | null;
+  sectionName: string | null;
+  preview: string;
+  relevanceScore: number;
+}
+
+/**
+ * Chat response from API
+ */
+export interface ChatResponse {
+  message: string;
+  language: DetectedLanguage;
+  sources: ChatSource[];
+  metadata: {
+    tokensUsed: number;
+    latencyMs: number;
+    model?: string;
+  };
+}
+
+/**
+ * Chat status check response
+ */
+export interface ChatStatusResponse {
+  chatEnabled: boolean;
+  embeddingStatus: EmbeddingStatus;
+  chunkCount?: number;
+  error?: string;
+}
+
+/**
+ * Inngest event payload for embedding generation
+ */
+export interface EmbeddingEventPayload {
+  documentId: string;
+  extractedTextUrl: string;
+  documentType?: string;
+}
+
+/**
+ * Embedding generation result
+ */
+export interface EmbeddingResult {
+  success: boolean;
+  chunkCount: number;
+  durationMs: number;
+  error?: string;
+  errorType?: EmbeddingErrorType;
+}
+
+/**
+ * Chat analytics record
+ */
+export interface ChatAnalytics {
+  id: string;
+  documentId: string;
+  sessionId: string;
+  queryCount: number;
+  detectedLanguage: DetectedLanguage | null;
+  firstQueryAt: string;
+  lastQueryAt: string;
+  createdAt: string;
+}
+
+// ============================================================================
 // NOTE: After running database migrations, regenerate types with:
 // npm run db:types
 // This will create types/database.types.ts with accurate schema
@@ -420,4 +565,9 @@ export type AIProvider = 'openai' | 'huggingface' | 'extractive' | 'unknown';
 // - summary_target_length: INTEGER (calculated 10% target)
 // - summary_actual_length: INTEGER (actual word count)
 // - summary_coverage_percent: NUMERIC (actual/target * 100)
+//
+// Migration 014 adds:
+// - document_embeddings table for vector storage
+// - chat_analytics table for usage tracking
+// - embedding_status, chat_enabled columns on documents
 // ============================================================================

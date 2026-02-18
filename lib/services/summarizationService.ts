@@ -5,11 +5,14 @@
  * It handles multi-level summarization, error handling, and fallback strategies.
  *
  * Features:
- * - Intelligent chunking with sentence boundary detection
- * - Multi-level summarization for long documents
+ * - Intelligent document preprocessing with section detection
+ * - Smart chunking with sentence boundary detection (for documents that exceed context)
+ * - Multi-level summarization for very long documents
  * - Fallback to extractive summarization if API fails
  * - Comprehensive error handling and validation
  * - Confidence scoring for summary quality
+ *
+ * Updated for GPT-4o-mini (128K context) with preprocessing support.
  */
 
 import {
@@ -19,13 +22,26 @@ import {
   ProviderChain,
 } from './providers';
 import type { TokenUsage } from './providers/AIProvider';
+import {
+  preprocessDocument,
+  preprocessDocumentFromPages,
+  type DocumentType,
+  type PreprocessResult,
+} from '../utils/documentPreprocessor';
 
-// Chunking configuration - OPTIMIZED FOR GPT-3.5-TURBO 16K
-const CHUNK_SIZE_TOKENS = 3000; // ~12000 characters (optimized for OpenAI 16k context)
-const CHUNK_OVERLAP_TOKENS = 300; // ~1200 characters overlap
-const MIN_CHUNK_TOKENS = 100;
-const MAX_CHUNK_TOKENS = 3000; // Increased from 1024
+// Chunking configuration - OPTIMIZED FOR GPT-4o-mini 128K context
+// With preprocessing, most documents fit in a single call
+// For documents that exceed threshold, use large chunks to minimize API calls
+const CHUNK_SIZE_TOKENS = 50000; // ~200,000 characters per chunk
+const CHUNK_OVERLAP_TOKENS = 500; // ~2000 characters overlap (smaller to avoid redundancy)
+const MIN_CHUNK_TOKENS = 1000;
+const MAX_CHUNK_TOKENS = 50000; // Match chunk size
 const CHARS_PER_TOKEN = 4; // Approximate ratio
+
+// Direct processing threshold - documents under this size skip chunking entirely
+// GPT-4o-mini: 128K context - 16K max output - 2K buffer = ~110K tokens for input
+// Most Kenyan budget documents (even 250+ pages) fit within this after preprocessing
+const DIRECT_PROCESSING_THRESHOLD = 110000; // tokens (~440,000 chars)
 
 // Summarization configuration
 const MAX_SUMMARY_LENGTH = 600; // words (for compatibility)
@@ -72,6 +88,15 @@ export interface SummarizationResult {
   tokensUsed?: TokenUsage;
   targetLength?: number;
   actualLength?: number;
+  // Preprocessing metadata (added for intelligent section detection)
+  preprocessing?: {
+    documentType: string;
+    sectionsKept: string[];
+    sectionsRemoved: string[];
+    reductionPercent: number;
+    tocParseSuccess: boolean;
+    unmatchedTocEntries: string[];
+  };
 }
 
 /**
@@ -158,12 +183,17 @@ export function splitByBoundary(text: string): SummarizationChunk[] {
       index++;
     }
 
-    // Move position forward, with overlap
-    position = Math.max(position + 1, endPos - overlapChars);
+    // Move position forward - next chunk starts after current chunk minus overlap
+    // The overlap ensures continuity between chunks
+    const nextPosition = endPos - overlapChars;
 
-    // Ensure we make progress
-    if (endPos === position) {
-      position = endPos + 1;
+    // Ensure we always make forward progress (at least half the chunk size)
+    const minProgress = Math.floor(chunkSizeChars / 2);
+    position = Math.max(position + minProgress, nextPosition);
+
+    // Safety: ensure we don't go past end
+    if (position >= text.length) {
+      break;
     }
   }
 
@@ -317,9 +347,15 @@ async function summarizeChunk(
 
 /**
  * Main summarization function with multi-level support
+ *
+ * @param extractedText - Raw extracted text from PDF
+ * @param documentType - Optional document type for intelligent preprocessing (CBROP, CFSP, ADP)
+ * @param extractedPages - Optional array of page texts for page-based preprocessing (more accurate)
  */
 export async function summarizeDocument(
-  extractedText: string
+  extractedText: string,
+  documentType?: DocumentType,
+  extractedPages?: string[] | null
 ): Promise<SummarizationResult> {
   // Validate input
   if (!extractedText || extractedText.trim().length === 0) {
@@ -333,25 +369,68 @@ export async function summarizeDocument(
     throw new Error('Text is too short to summarize (minimum 100 characters)');
   }
 
+  // Apply preprocessing if document type is provided
+  let textToSummarize = trimmedText;
+  let preprocessingResult: PreprocessResult | undefined;
+
+  if (documentType) {
+    // Use page-based preprocessing if pages are available (more accurate TOC detection)
+    if (extractedPages && extractedPages.length > 0) {
+      console.log(
+        `[Summarization] Preprocessing ${documentType} document using page-based approach (${extractedPages.length} pages)`
+      );
+
+      preprocessingResult = preprocessDocumentFromPages(extractedPages, documentType);
+    } else {
+      console.log(
+        `[Summarization] Preprocessing ${documentType} document using merged text (${trimmedText.length} chars)`
+      );
+
+      preprocessingResult = preprocessDocument(trimmedText, documentType);
+    }
+
+    textToSummarize = preprocessingResult.filteredText;
+
+    console.log(
+      `[Summarization] Preprocessing complete: ${preprocessingResult.reductionPercent.toFixed(1)}% reduction, ` +
+        `${preprocessingResult.sectionsKept.length} sections kept, ` +
+        `${preprocessingResult.sectionsRemoved.length} removed, ` +
+        `TOC parsing: ${preprocessingResult.tocParseSuccess ? 'success' : 'failed'}`
+    );
+  }
+
   console.log(
-    `[Summarization] Starting summarization for ${trimmedText.length} characters ` +
-    `(~${tokenizeText(trimmedText)} tokens)`
+    `[Summarization] Starting summarization for ${textToSummarize.length} characters ` +
+    `(~${tokenizeText(textToSummarize)} tokens)`
   );
 
+  // Build preprocessing metadata for result
+  const preprocessingMetadata = preprocessingResult
+    ? {
+        documentType: preprocessingResult.documentType,
+        sectionsKept: preprocessingResult.sectionsKept,
+        sectionsRemoved: preprocessingResult.sectionsRemoved,
+        reductionPercent: preprocessingResult.reductionPercent,
+        tocParseSuccess: preprocessingResult.tocParseSuccess,
+        unmatchedTocEntries: preprocessingResult.unmatchedTocEntries,
+      }
+    : undefined;
+
   try {
-    // For short documents, summarize directly without chunking
-    if (tokenizeText(trimmedText) <= MAX_CHUNK_TOKENS) {
-      console.log('[Summarization] Document is small enough to summarize directly');
+    // For documents under threshold, summarize directly without chunking
+    // With GPT-4o-mini's 128K context + preprocessing, most documents fit here
+    if (tokenizeText(textToSummarize) <= DIRECT_PROCESSING_THRESHOLD) {
+      console.log('[Summarization] Document fits in context, processing directly (no chunking)');
 
       try {
-        const result = await providerChain.summarize(trimmedText, {
+        const result = await providerChain.summarize(textToSummarize, {
           maxLength: MAX_SUMMARY_LENGTH,
           minLength: MIN_SUMMARY_LENGTH,
           retries: 2,
-          timeout: 60000, // 60 seconds to allow for model cold start
+          timeout: 120000, // 120 seconds for larger documents with GPT-4o-mini
         });
 
-        if (!validateSummary(result.summary, trimmedText)) {
+        if (!validateSummary(result.summary, textToSummarize)) {
           throw new Error('Generated summary failed quality validation');
         }
 
@@ -370,11 +449,12 @@ export async function summarizeDocument(
           tokensUsed: result.tokensUsed,
           targetLength: result.targetLength,
           actualLength: result.actualLength,
+          preprocessing: preprocessingMetadata,
         };
       } catch (error) {
         console.error('[Summarization] All providers failed, using fallback:', error);
 
-        const fallbackSummary = createFallbackSummary(trimmedText);
+        const fallbackSummary = createFallbackSummary(textToSummarize);
         return {
           summary: fallbackSummary,
           confidence: 0.3,
@@ -382,13 +462,14 @@ export async function summarizeDocument(
           charCount: fallbackSummary.length,
           chunkCount: 1,
           errors: [error instanceof Error ? error.message : String(error)],
+          preprocessing: preprocessingMetadata,
         };
       }
     }
 
-    // For large documents, use chunking
-    console.log('[Summarization] Document requires chunking');
-    const chunks = splitByBoundary(trimmedText);
+    // For large documents, use chunking (rare with GPT-4o-mini + preprocessing)
+    console.log('[Summarization] Document exceeds direct processing threshold, using chunking');
+    const chunks = splitByBoundary(textToSummarize);
     console.log(`[Summarization] Split into ${chunks.length} chunks`);
 
     const chunkSummaries: string[] = [];
@@ -430,7 +511,47 @@ export async function summarizeDocument(
       `(${combinedSummary.length} chars)`
     );
 
-    // Level 2: If combined summary is still too long, summarize it recursively
+    // ALWAYS consolidate multi-chunk summaries into a unified final summary
+    // This removes duplicate headers, merges overlapping content, and creates coherent output
+    console.log('[Summarization] Consolidating chunk summaries into unified summary...');
+
+    try {
+      const consolidationResult = await providerChain.summarize(combinedSummary, {
+        maxLength: Math.min(1500, Math.ceil(combinedSummary.length / 10)), // Target ~10% of combined
+        minLength: Math.min(400, Math.ceil(combinedSummary.length / 20)),
+        retries: 2,
+        timeout: 90000, // 90 seconds for consolidation
+      });
+
+      console.log(
+        `[Summarization] Consolidation complete by ${consolidationResult.provider} ` +
+        `(${consolidationResult.summary.length} chars, confidence: ${consolidationResult.confidence.toFixed(2)})`
+      );
+
+      // Adjust confidence based on chunk errors
+      const confidence = chunkErrors.length > 0
+        ? Math.max(0.6, consolidationResult.confidence * (1.0 - chunkErrors.length / chunks.length))
+        : consolidationResult.confidence;
+
+      return {
+        summary: consolidationResult.summary,
+        confidence,
+        modelVersion: consolidationResult.modelVersion,
+        charCount: consolidationResult.summary.length,
+        chunkCount: chunks.length,
+        errors: chunkErrors.length > 0 ? chunkErrors : undefined,
+        provider: consolidationResult.provider,
+        tokensUsed: consolidationResult.tokensUsed,
+        targetLength: consolidationResult.targetLength,
+        actualLength: consolidationResult.actualLength,
+        preprocessing: preprocessingMetadata,
+      };
+    } catch (consolidationError) {
+      console.warn('[Summarization] Consolidation failed, falling back to combined summary:', consolidationError);
+      // Fall through to existing logic below
+    }
+
+    // Fallback: If consolidation failed and combined summary is still too long, summarize recursively
     if (tokenizeText(combinedSummary) > MAX_CHUNK_TOKENS) {
       console.log(
         `[Summarization] Combined summary is long (${tokenizeText(combinedSummary)} tokens), ` +
@@ -493,6 +614,7 @@ export async function summarizeDocument(
             charCount: finalSummary.length,
             chunkCount: chunks.length,
             errors: chunkErrors.length > 0 ? chunkErrors : undefined,
+            preprocessing: preprocessingMetadata,
           };
         }
 
@@ -526,6 +648,7 @@ export async function summarizeDocument(
           tokensUsed: result.tokensUsed,
           targetLength: result.targetLength,
           actualLength: result.actualLength,
+          preprocessing: preprocessingMetadata,
         };
       } catch (error) {
         console.error('[Summarization] Level 2 summarization failed:', error);
@@ -545,6 +668,7 @@ export async function summarizeDocument(
             ...chunkErrors,
             error instanceof Error ? error.message : String(error),
           ],
+          preprocessing: preprocessingMetadata,
         };
       }
     }
@@ -561,12 +685,13 @@ export async function summarizeDocument(
       charCount: combinedSummary.length,
       chunkCount: chunks.length,
       errors: chunkErrors.length > 0 ? chunkErrors : undefined,
+      preprocessing: preprocessingMetadata,
     };
   } catch (error) {
     // Complete failure - use fallback
     console.error('[Summarization] Complete failure, using fallback:', error);
 
-    const fallbackSummary = createFallbackSummary(trimmedText);
+    const fallbackSummary = createFallbackSummary(textToSummarize);
     return {
       summary: fallbackSummary,
       confidence: 0.3,
@@ -574,6 +699,7 @@ export async function summarizeDocument(
       charCount: fallbackSummary.length,
       chunkCount: 1,
       errors: [error instanceof Error ? error.message : String(error)],
+      preprocessing: preprocessingMetadata,
     };
   }
 }

@@ -36,7 +36,7 @@ export interface OpenAISummarizeResult {
 }
 
 /**
- * Summarize text using OpenAI GPT-3.5-turbo
+ * Summarize text using OpenAI GPT-4o-mini
  */
 export async function summarizeWithOpenAI(
   text: string,
@@ -62,7 +62,7 @@ export async function summarizeWithOpenAI(
 
     const response = await client.chat.completions.create(
       {
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -92,7 +92,7 @@ export async function summarizeWithOpenAI(
 
     return {
       summary,
-      modelVersion: 'gpt-3.5-turbo',
+      modelVersion: 'gpt-4o-mini',
       confidence: 0.85, // OpenAI generally produces good summaries
     };
   } catch (error) {

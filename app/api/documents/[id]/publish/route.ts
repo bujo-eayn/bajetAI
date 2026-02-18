@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { inngest, INNGEST_EVENTS } from '@/lib/inngest/client';
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Get the document to check if it has both summaries
     const { data: document, error: fetchError } = await supabase
       .from('documents')
-      .select('id, title, summary_en, summary_sw, status')
+      .select('id, title, summary_en, summary_sw, status, extracted_text_url, document_type')
       .eq('id', id)
       .single();
 
@@ -77,6 +78,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { error: 'Failed to publish document' },
         { status: 500 }
       );
+    }
+
+    // Trigger embedding generation for RAG chat
+    // This runs in the background and enables chat once complete
+    if (document.extracted_text_url) {
+      try {
+        await inngest.send({
+          name: INNGEST_EVENTS.DOCUMENT_PUBLISHED,
+          data: {
+            documentId: document.id,
+            extractedTextUrl: document.extracted_text_url,
+            documentType: document.document_type || undefined,
+          },
+        });
+        console.log(`[Publish] Triggered embedding generation for document ${document.id}`);
+      } catch (inngestError) {
+        // Log but don't fail the publish - embeddings can be retried later
+        console.error('[Publish] Failed to trigger embedding generation:', inngestError);
+      }
     }
 
     return NextResponse.json({

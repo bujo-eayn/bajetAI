@@ -2,7 +2,12 @@
 // This file initializes the Inngest client for background job processing
 
 import { Inngest, EventSchemas } from 'inngest';
-import type { ExtractionEventPayload, SummarizationEventPayload, TranslationEventPayload } from '@/types';
+import type {
+  ExtractionEventPayload,
+  SummarizationEventPayload,
+  TranslationEventPayload,
+  EmbeddingEventPayload,
+} from '@/types';
 
 // Define event schemas for type safety
 type Events = {
@@ -18,6 +23,16 @@ type Events = {
   'document.summarization-completed': {
     data: TranslationEventPayload;
   };
+  // RAG Chat Events (Migration 014)
+  'document.published': {
+    data: EmbeddingEventPayload;
+  };
+  'document.embedding-completed': {
+    data: {
+      documentId: string;
+      chunkCount: number;
+    };
+  };
 };
 
 // Initialize Inngest client
@@ -32,4 +47,7 @@ export const INNGEST_EVENTS = {
   EXTRACTION_COMPLETED: 'document.extraction-completed',
   SUMMARIZATION_REQUESTED: 'document.summarization-requested',
   SUMMARIZATION_COMPLETED: 'document.summarization-completed',
+  // RAG Chat Events
+  DOCUMENT_PUBLISHED: 'document.published',
+  EMBEDDING_COMPLETED: 'document.embedding-completed',
 } as const;

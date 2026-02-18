@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDate, formatFileSize } from '@/lib/i18n/formatters';
 import { FileText, Calendar, Download, MessageSquare } from 'lucide-react';
-import { ChatInterface } from '@/components/chat';
 
 interface Document {
   id: string;
@@ -25,8 +24,6 @@ interface Document {
   summaryEn?: string | null;
   summarySw?: string | null;
   summaryConfidence?: number;
-  documentType?: string;
-  chatEnabled?: boolean;
   uploader?: {
     fullName: string;
     role: string;
@@ -66,8 +63,9 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
   };
 
   const breadcrumbs = [
-    { label: t('nav.home'), href: '/' },
+    { label: 'Home', href: '/' },
     { label: t('nav.participate'), href: '/' },
+    { label: t('area.budgeting.title'), href: '/participate/budgeting' },
     { label: document?.title || '...' },
   ];
 
@@ -93,7 +91,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
           <FileText className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-2xl font-bold">{t('document.notFound')}</h2>
           <p className="text-muted-foreground">{t('error.somethingWentWrong')}</p>
-          <Button onClick={() => router.push('/participate')}>
+          <Button onClick={() => router.push('/participate/budgeting')}>
             {t('action.back')}
           </Button>
         </div>
@@ -145,13 +143,6 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
                 </a>
               </Button>
               <ShareButton url={documentUrl} title={document.title} />
-              {document.chatEnabled && (
-                <ChatInterface
-                  documentId={document.id}
-                  documentTitle={document.title}
-                  documentType={document.documentType}
-                />
-              )}
             </div>
           </div>
         </div>
@@ -165,10 +156,9 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             <TabsTrigger value="document">
               {t('tabs.fullDocument')}
             </TabsTrigger>
-            <TabsTrigger value="feedback" disabled className="gap-2">
-              <MessageSquare className="h-4 w-4" aria-hidden="true" />
-              {t("tabs.feedback")}
-              <Badge variant="secondary" className="ml-1 text-xs">{t("status.comingSoon")}</Badge>
+            <TabsTrigger value="comments" disabled>
+              <MessageSquare className="mr-2 h-4 w-4" aria-hidden="true" />
+              {t('tabs.comments')}
             </TabsTrigger>
           </TabsList>
 
@@ -186,17 +176,17 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             <PDFViewer fileUrl={document.fileUrl} title={document.title} />
           </TabsContent>
 
-          {/* Public Feedback Tab (Placeholder) */}
-          <TabsContent value="feedback" className="space-y-4">
+          {/* Comments Tab (Placeholder) */}
+          <TabsContent value="comments" className="space-y-4">
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
               <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground" aria-hidden="true" />
               <h3 className="mb-2 text-lg font-semibold">
-                {language === 'en' ? 'Public Feedback Coming Soon' : 'Maoni ya Umma Yanakuja Hivi Karibuni'}
+                {language === 'en' ? 'Comments Coming Soon' : 'Maoni Yanakuja Hivi Karibuni'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {language === 'en'
-                  ? 'Public feedback submission will be available in a future update.'
-                  : 'Kuwasilisha maoni ya umma kutapatikana katika sasisho la baadaye.'}
+                  ? 'Public commenting will be available in a future update.'
+                  : 'Kutoa maoni kwa umma kutapatikana katika sasisho la baadaye.'}
               </p>
             </div>
           </TabsContent>

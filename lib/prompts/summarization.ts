@@ -215,8 +215,8 @@ export function estimateMessageTokens(messages: ChatMessage[]): number {
  * Validate that prompt and text will fit in model context
  *
  * @param text - Text to summarize
- * @param maxOutputTokens - Expected output size
- * @param contextLimit - Model's context window limit (default: 16385 for GPT-3.5-turbo-16k)
+ * @param maxOutputTokens - Expected output size (default: 16000 for GPT-4o-mini)
+ * @param contextLimit - Model's context window limit (default: 128000 for GPT-4o-mini)
  * @returns true if will fit, false otherwise
  */
 export function validateContextFit(
@@ -228,8 +228,8 @@ export function validateContextFit(
     totalChunks?: number;
     isMultiLevel?: boolean;
   },
-  maxOutputTokens: number = 3000,
-  contextLimit: number = 16385
+  maxOutputTokens: number = 16000,
+  contextLimit: number = 128000
 ): { fits: boolean; estimatedTokens: number; availableTokens: number } {
   const messages = buildSummarizationMessages(text, options);
   const inputTokens = estimateMessageTokens(messages);
