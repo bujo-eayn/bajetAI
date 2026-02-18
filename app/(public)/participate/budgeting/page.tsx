@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PublicLayout } from '@/components/templates/PublicLayout';
 import { Breadcrumb } from '@/components/molecules/Breadcrumb';
@@ -9,7 +9,6 @@ import { DocumentCard } from '@/components/organisms/DocumentCard';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText } from 'lucide-react';
-import {Suspense} from "react";
 
 interface Document {
   id: string;
@@ -22,7 +21,7 @@ interface Document {
   summaryLanguages: ('en' | 'sw')[];
 }
 
-export default function BudgetingPage() {
+function BudgetingContent() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -76,7 +75,6 @@ export default function BudgetingPage() {
   ];
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
     <PublicLayout>
       <div className="space-y-8">
         {/* Breadcrumb */}
@@ -135,7 +133,14 @@ export default function BudgetingPage() {
           </div>
         )}
       </div>
-      </PublicLayout>
+    </PublicLayout>
+  );
+}
+
+export default function BudgetingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BudgetingContent />
     </Suspense>
   );
 }
