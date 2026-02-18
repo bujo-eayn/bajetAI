@@ -109,19 +109,19 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
 
         {/* Document Header */}
         <div className="space-y-4 border-b pb-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1 space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">{document.title}</h1>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{document.title}</h1>
 
               {/* Metadata */}
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" aria-hidden="true" />
                   {t('document.published')}: {formatDate(new Date(document.publishedAt), language)}
                 </span>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <span>{document.pageCount} {t('document.pages')}</span>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <span>PDF • {document.fileSize}</span>
               </div>
 
@@ -135,7 +135,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 sm:shrink-0">
               <Button asChild size="sm" className="gap-2">
                 <a href={document.fileUrl} download>
                   <Download className="h-4 w-4" aria-hidden="true" />
