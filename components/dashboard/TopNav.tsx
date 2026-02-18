@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +22,7 @@ import { Sidebar } from './Sidebar';
 export function TopNav() {
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
     await signOut();
@@ -68,6 +72,11 @@ export function TopNav() {
 
         {/* Right side - User menu */}
         <div className="flex items-center space-x-4">
+          <Link href="/beta" aria-label={t('beta.navTooltip')}>
+            <Badge variant="warning" className="cursor-pointer font-bold tracking-widest text-xs px-2.5 py-0.5 rounded-full">
+              {t('beta.tag')}
+            </Badge>
+          </Link>
           <span className="hidden text-sm text-gray-600 md:block">
             {profile?.full_name || user?.email}
           </span>
