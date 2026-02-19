@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { generateUniqueUsername } from '@/lib/utils/usernameGenerator';
@@ -8,7 +8,7 @@ import { PublicLayout } from '@/components/templates/PublicLayout';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'processing' | 'error'>('processing');
@@ -75,27 +75,39 @@ export default function AuthCallbackPage() {
 
   if (status === 'error') {
     return (
-      <PublicLayout>
-        <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-xl font-semibold">Sign-in failed</h2>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            There was a problem signing you in. The link may have expired. Please try again.
-          </p>
-          <Button onClick={() => router.push('/join')}>Try again</Button>
-        </div>
-      </PublicLayout>
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-semibold">Sign-in failed</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          There was a problem signing you in. The link may have expired. Please try again.
+        </p>
+        <Button onClick={() => router.push('/join')}>Try again</Button>
+      </div>
     );
   }
 
   return (
-    <PublicLayout>
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Signing you in&hellip;</p>
-        </div>
+    <div className="flex min-h-[400px] items-center justify-center">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <p className="text-muted-foreground">Signing you in&hellip;</p>
       </div>
+    </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <PublicLayout>
+      <Suspense
+        fallback={
+          <div className="flex min-h-[400px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }
+      >
+        <AuthCallbackInner />
+      </Suspense>
     </PublicLayout>
   );
 }
