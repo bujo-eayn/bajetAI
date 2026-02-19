@@ -16,8 +16,6 @@ import { ChatSources } from './ChatSources';
 import { ChatWelcome } from './ChatWelcome';
 import { MessageSquare, AlertCircle, Loader2, AlertTriangle } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/types';
-import { PublicAuthModal } from '@/components/auth/PublicAuthModal';
-import { usePublicAuth } from '@/lib/auth/PublicAuthContext';
 
 // Generate a UUID using crypto.randomUUID() with fallback
 function generateId(): string {
@@ -69,10 +67,7 @@ export function ChatInterface({
   onExternalOpenChange,
 }: ChatInterfaceProps) {
   const { t } = useLanguage();
-  const { user, publicProfile } = usePublicAuth();
-  const isAuthenticated = !!user && !!publicProfile;
   const [internalOpen, setInternalOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = (v: boolean) => {
@@ -247,9 +242,6 @@ export function ChatInterface({
                   <ChatMessage
                     role={message.role}
                     content={message.content}
-                    messageId={message.id}
-                    onAuthRequired={() => setAuthModalOpen(true)}
-                    isAuthenticated={isAuthenticated}
                   />
                   {message.sources && message.sources.length > 0 && (
                     <div className="ml-11 mt-1">
@@ -309,11 +301,6 @@ export function ChatInterface({
         {renderChatContent()}
       </SheetContent>
 
-      <PublicAuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        reason="to rate this response"
-      />
     </Sheet>
   );
 }

@@ -2,16 +2,11 @@
 
 import { cn } from '@/lib/utils';
 import { User, Bot } from 'lucide-react';
-import { ReactionBar } from '@/components/comments/ReactionBar';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
   content: string;
   isLoading?: boolean;
-  /** Ephemeral message id used as the reaction target_id */
-  messageId?: string;
-  onAuthRequired?: () => void;
-  isAuthenticated?: boolean;
 }
 
 /**
@@ -19,19 +14,13 @@ interface ChatMessageProps {
  *
  * Renders a single chat message bubble with appropriate styling
  * based on whether it's from the user or assistant.
- * Assistant messages optionally show a ReactionBar.
  */
 export function ChatMessage({
   role,
   content,
   isLoading,
-  messageId,
-  onAuthRequired,
-  isAuthenticated = false,
 }: ChatMessageProps) {
   const isUser = role === 'user';
-  const showReactions =
-    !isUser && !isLoading && !!messageId && !!onAuthRequired;
 
   return (
     <div
@@ -68,17 +57,6 @@ export function ChatMessage({
           )}
         </div>
 
-        {/* Reaction bar for assistant messages */}
-        {showReactions && (
-          <ReactionBar
-            counts={{ thumbs_up: 0, thumbs_down: 0, user_reaction: null }}
-            targetType="chat_response"
-            targetId={messageId!}
-            onAuthRequired={onAuthRequired!}
-            isAuthenticated={isAuthenticated}
-            compact
-          />
-        )}
       </div>
 
       {/* Avatar for user */}

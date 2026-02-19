@@ -57,13 +57,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (error) throw error;
 
+    // Resolve the authenticated user (if any) to personalise user_reaction
+    const { data: { user } } = await supabase.auth.getUser();
+
     // Enrich each comment with reaction counts and reply count (top-level only)
     const enriched = await Promise.all(
       (comments ?? []).map(async (comment) => {
         const [reactionsResult, replyCountResult] = await Promise.all([
           supabase
             .from('reactions')
-            .select('reaction_type')
+            .select('reaction_type, user_id')
             .eq('target_type', 'comment')
             .eq('target_id', comment.id),
           supabase
@@ -72,6 +75,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             .eq('parent_id', comment.id),
         ]);
         const reactionData = reactionsResult.data ?? [];
+        const userReactionRow = user
+          ? reactionData.find((r) => r.user_id === user.id)
+          : undefined;
 
         return {
           ...comment,
@@ -79,7 +85,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           reactions: {
             thumbs_up: reactionData.filter((r) => r.reaction_type === 'thumbs_up').length,
             thumbs_down: reactionData.filter((r) => r.reaction_type === 'thumbs_down').length,
-            user_reaction: null as 'thumbs_up' | 'thumbs_down' | null,
+            user_reaction: (userReactionRow?.reaction_type ?? null) as 'thumbs_up' | 'thumbs_down' | null,
           },
         };
       })
