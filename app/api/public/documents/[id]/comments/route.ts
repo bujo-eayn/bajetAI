@@ -60,10 +60,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Enrich each comment with reaction counts and reply count (top-level only)
     const enriched = await Promise.all(
       (comments ?? []).map(async (comment) => {
-        const tasks: [
-          Promise<{ data: { reaction_type: string }[] | null; error: unknown }>,
-          Promise<{ count: number | null; error: unknown }>
-        ] = [
+        const [reactionsResult, replyCountResult] = await Promise.all([
           supabase
             .from('reactions')
             .select('reaction_type')
@@ -73,9 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             .from('document_comments')
             .select('id', { count: 'exact', head: true })
             .eq('parent_id', comment.id),
-        ];
-
-        const [reactionsResult, replyCountResult] = await Promise.all(tasks);
+        ]);
         const reactionData = reactionsResult.data ?? [];
 
         return {
