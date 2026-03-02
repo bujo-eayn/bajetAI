@@ -15,7 +15,11 @@ interface ChatMessageProps {
  * Renders a single chat message bubble with appropriate styling
  * based on whether it's from the user or assistant.
  */
-export function ChatMessage({ role, content, isLoading }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  isLoading,
+}: ChatMessageProps) {
   const isUser = role === 'user';
 
   return (
@@ -32,24 +36,27 @@ export function ChatMessage({ role, content, isLoading }: ChatMessageProps) {
         </div>
       )}
 
-      {/* Message bubble */}
-      <div
-        className={cn(
-          'max-w-[80%] rounded-lg px-4 py-2',
-          isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-foreground'
-        )}
-      >
-        {isLoading ? (
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
-        ) : (
-          <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
-        )}
+      <div className="flex flex-col gap-1 max-w-[80%]">
+        {/* Message bubble */}
+        <div
+          className={cn(
+            'rounded-lg px-4 py-2',
+            isUser
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-foreground'
+          )}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap break-words">{content}</p>
+          )}
+        </div>
+
       </div>
 
       {/* Avatar for user */}

@@ -18,9 +18,11 @@ import { Share2, Check, Copy } from 'lucide-react';
 interface ShareButtonProps {
   url: string;
   title: string;
+  /** Renders an icon-only button (no label text) for compact layouts */
+  iconOnly?: boolean;
 }
 
-export function ShareButton({ url, title }: ShareButtonProps) {
+export function ShareButton({ url, title, iconOnly = false }: ShareButtonProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
@@ -37,10 +39,21 @@ export function ShareButton({ url, title }: ShareButtonProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Share2 className="h-4 w-4" aria-hidden="true" />
-          {t('document.share')}
-        </Button>
+        {iconOnly ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={t('document.share')}
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="gap-2">
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+            {t('document.share')}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
