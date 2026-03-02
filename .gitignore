@@ -93,3 +93,4 @@ dev-docs/*
 
 nul
 build.log
+evaluation_results.json
