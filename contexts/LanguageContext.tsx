@@ -52,6 +52,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tabs.summary': 'Summary',
     'tabs.fullDocument': 'Full Document',
     'tabs.feedback': 'Public Feedback',
+    'tabs.comments': 'Comments',
 
     // PDF Viewer
     'pdf.loading': 'Loading document...',
@@ -154,6 +155,13 @@ const translations: Record<Language, Record<string, string>> = {
     'error.tryAgain': 'Please try again',
     'error.notFound': 'Not found',
 
+    // Beta
+    'beta.tag': 'BETA',
+    'beta.pageTitle': 'Beta Release',
+    'beta.navTooltip': 'Beta version – click for details',
+    'beta.bannerText': 'This platform is currently in beta. Some features may change.',
+    'beta.bannerLink': 'Learn more',
+
     // Chat
     'chat.title': 'Ask about this document',
     'chat.askQuestion': 'Ask a Question',
@@ -176,6 +184,8 @@ const translations: Record<Language, Record<string, string>> = {
     'chat.embeddingsFailed': 'Chat could not be enabled for this document.',
     'chat.sendError': 'Failed to send message. Please try again.',
     'chat.statusError': 'Failed to check chat status.',
+    'chat.disclaimerTitle': 'AI Disclaimer',
+    'chat.disclaimer': 'AI-generated responses are for reference only. Please read the original document for official information.',
   },
 
   sw: {
@@ -216,6 +226,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tabs.summary': 'Muhtasari',
     'tabs.fullDocument': 'Hati Kamili',
     'tabs.feedback': 'Maoni ya Umma',
+    'tabs.comments': 'Maoni',
 
     // PDF Viewer
     'pdf.loading': 'Inapakia hati...',
@@ -318,6 +329,13 @@ const translations: Record<Language, Record<string, string>> = {
     'error.tryAgain': 'Tafadhali jaribu tena',
     'error.notFound': 'Haijapatikana',
 
+    // Beta
+    'beta.tag': 'BETA',
+    'beta.pageTitle': 'Toleo la Beta',
+    'beta.navTooltip': 'Toleo la beta – bonyeza kwa maelezo',
+    'beta.bannerText': 'Jukwaa hili liko katika awamu ya beta. Baadhi ya vipengele vinaweza kubadilika.',
+    'beta.bannerLink': 'Jifunze zaidi',
+
     // Chat
     'chat.title': 'Uliza kuhusu hati hii',
     'chat.askQuestion': 'Uliza Swali',
@@ -340,6 +358,8 @@ const translations: Record<Language, Record<string, string>> = {
     'chat.embeddingsFailed': 'Mazungumzo hayakuweza kuwezeshwa kwa hati hii.',
     'chat.sendError': 'Imeshindwa kutuma ujumbe. Tafadhali jaribu tena.',
     'chat.statusError': 'Imeshindwa kukagua hali ya mazungumzo.',
+    'chat.disclaimerTitle': 'Onyo la AI',
+    'chat.disclaimer': 'Majibu yanayozalishwa na AI ni kwa marejeo tu. Tafadhali soma hati ya asili kwa taarifa rasmi.',
   },
 };
 
