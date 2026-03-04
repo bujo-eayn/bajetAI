@@ -7,16 +7,23 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { calculateReadingTime } from '@/lib/i18n/formatters';
 import { Clock, Languages } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { ReactionBar } from '@/components/comments/ReactionBar';
+import { PublicAuthModal } from '@/components/auth/PublicAuthModal';
+import { usePublicAuth } from '@/lib/auth/PublicAuthContext';
 
 interface SummaryTabProps {
   summaryEn?: string | null;
   summarySw?: string | null;
   confidence?: number;
+  documentId: string;
 }
 
-export function SummaryTab({ summaryEn, summarySw, confidence }: SummaryTabProps) {
+export function SummaryTab({ summaryEn, summarySw, confidence, documentId }: SummaryTabProps) {
   const { t, language } = useLanguage();
   const [selectedLang, setSelectedLang] = useState<'en' | 'sw'>(language);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user, publicProfile } = usePublicAuth();
+  const isAuthenticated = !!user && !!publicProfile;
 
   // Determine which summary to show
   const currentSummary = selectedLang === 'en' ? summaryEn : summarySw;
@@ -95,6 +102,26 @@ export function SummaryTab({ summaryEn, summarySw, confidence }: SummaryTabProps
             : 'Muhtasari huu ulizalishwa na AI na unapaswa kutumika kama mwongozo. Tafadhali kagua hati kamili kwa maelezo kamili.'}
         </p>
       </div>
+
+      {/* Summary helpfulness reaction */}
+      <div className="flex items-center justify-between border-t pt-4">
+        <p className="text-sm text-muted-foreground">
+          {language === 'en' ? 'Was this summary helpful?' : 'Je, muhtasari huu ulikuwa wa msaada?'}
+        </p>
+        <ReactionBar
+          counts={{ thumbs_up: 0, thumbs_down: 0, user_reaction: null }}
+          targetType="document_summary"
+          targetId={documentId}
+          onAuthRequired={() => setAuthModalOpen(true)}
+          isAuthenticated={isAuthenticated}
+        />
+      </div>
+
+      <PublicAuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        reason="to rate this summary"
+      />
     </div>
   );
 }

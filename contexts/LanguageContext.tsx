@@ -52,6 +52,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tabs.summary': 'Summary',
     'tabs.fullDocument': 'Full Document',
     'tabs.feedback': 'Public Feedback',
+    'tabs.comments': 'Comments',
 
     // PDF Viewer
     'pdf.loading': 'Loading document...',
@@ -225,6 +226,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tabs.summary': 'Muhtasari',
     'tabs.fullDocument': 'Hati Kamili',
     'tabs.feedback': 'Maoni ya Umma',
+    'tabs.comments': 'Maoni',
 
     // PDF Viewer
     'pdf.loading': 'Inapakia hati...',

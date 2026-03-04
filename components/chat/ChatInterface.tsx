@@ -34,6 +34,9 @@ interface ChatInterfaceProps {
   documentId: string;
   documentTitle: string;
   documentType?: string;
+  /** When provided, the internal trigger button is hidden and this controls the sheet */
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 interface Message {
@@ -60,9 +63,17 @@ export function ChatInterface({
   documentId,
   documentTitle,
   documentType,
+  externalOpen,
+  onExternalOpenChange,
 }: ChatInterfaceProps) {
   const { t } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = (v: boolean) => {
+    if (onExternalOpenChange) onExternalOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -228,7 +239,10 @@ export function ChatInterface({
             <>
               {messages.map((message) => (
                 <div key={message.id}>
-                  <ChatMessage role={message.role} content={message.content} />
+                  <ChatMessage
+                    role={message.role}
+                    content={message.content}
+                  />
                   {message.sources && message.sources.length > 0 && (
                     <div className="ml-11 mt-1">
                       <ChatSources sources={message.sources} />
@@ -264,12 +278,15 @@ export function ChatInterface({
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <MessageSquare className="h-4 w-4" aria-hidden="true" />
-          {t('chat.askQuestion')}
-        </Button>
-      </SheetTrigger>
+      {/* Only render the internal trigger when not externally controlled (e.g. desktop) */}
+      {externalOpen === undefined && (
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <MessageSquare className="h-4 w-4" aria-hidden="true" />
+            {t('chat.askQuestion')}
+          </Button>
+        </SheetTrigger>
+      )}
       <SheetContent
         side="right"
         className="w-full sm:max-w-md flex flex-col p-0"
@@ -283,6 +300,7 @@ export function ChatInterface({
 
         {renderChatContent()}
       </SheetContent>
+
     </Sheet>
   );
 }

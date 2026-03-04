@@ -570,4 +570,63 @@ export interface ChatAnalytics {
 // - document_embeddings table for vector storage
 // - chat_analytics table for usage tracking
 // - embedding_status, chat_enabled columns on documents
+//
+// Migration 015 adds:
+// - public_profiles table for anonymous citizen accounts
+// - document_comments table for threaded public comments
+// - reactions table for thumbs up/down on summaries, comments, chat responses
 // ============================================================================
+
+// ============================================================================
+// Public Commenting System Types (Migration 015)
+// ============================================================================
+
+export type PublicProfile = {
+  id: string;
+  username: string;
+  email: string;
+  role: 'citizen';
+  created_at: string;
+};
+
+export type ReactionCounts = {
+  thumbs_up: number;
+  thumbs_down: number;
+  user_reaction: 'thumbs_up' | 'thumbs_down' | null;
+};
+
+export type DocumentComment = {
+  id: string;
+  document_id: string;
+  author_id: string | null;
+  parent_id: string | null;
+  content: string;
+  is_admin_response: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined from API
+  author?: Pick<PublicProfile, 'id' | 'username'> | null;
+  reply_count?: number;
+  reactions?: ReactionCounts;
+  // Populated client-side when thread is expanded
+  replies?: DocumentComment[];
+};
+
+export type Reaction = {
+  id: string;
+  user_id: string;
+  target_type: 'document_summary' | 'comment' | 'chat_response';
+  target_id: string;
+  reaction_type: 'thumbs_up' | 'thumbs_down';
+  created_at: string;
+};
+
+// Form types for comments
+export type CommentForm = {
+  content: string;
+  parent_id?: string;
+};
+
+export type MagicLinkForm = {
+  email: string;
+};

@@ -38,7 +38,6 @@ export async function middleware(request: NextRequest) {
   // Protect dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
-      // Redirect to login if not authenticated
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
@@ -52,14 +51,22 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (profile?.role !== 'official') {
-      // Redirect non-officials to home page
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated OFFICIALS away from auth pages
+  // Citizens (public_profiles only) can visit /login and /signup freely
   if (user && ['/login', '/signup'].includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.role === 'official') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   return response;
