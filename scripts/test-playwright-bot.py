@@ -8,11 +8,9 @@ BASE_URL = "http://localhost:3000"
 
 # List of questions for evaluation
 TEST_QUERIES = [
-    "What are the main priorities in this document?",
-    "Does this document mention any specific budget figures for education?",
-    "What is the summary of the health section?",
-    "How does the budget for this year compare to the previous year if mentioned?",
-    "Are there any specific risks or challenges identified?"
+    "Tell me about the monitoring and evaluation framework",
+    "What were the key achievements for the various departments as indicated in the document?",
+    "What are the Strategic Priorities for FY 2025/26?",
 ]
 
 async def main():
