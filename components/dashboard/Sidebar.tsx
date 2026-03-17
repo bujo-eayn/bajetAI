@@ -19,7 +19,6 @@ const navigation = [
     name: 'Comments',
     href: '/dashboard/comments',
     icon: MessageSquare,
-    disabled: true,
   },
   {
     name: 'Analytics',
