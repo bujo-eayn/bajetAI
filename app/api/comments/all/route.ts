@@ -15,7 +15,7 @@ export async function GET() {
         content,
         created_at,
         author:public_profiles(username),
-        document:documents(title)
+        document:documents(id, title)  // ✅ FIXED HERE
       `)
       .order("created_at", { ascending: false });
 
