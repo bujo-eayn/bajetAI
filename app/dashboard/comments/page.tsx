@@ -31,9 +31,8 @@ export default function CommentsPage() {
 
         const allComments: Comment[] = data?.data ?? [];
 
-        // Group by document
+        // Group comments by document
         const docMap: Record<string, DocumentSummary> = {};
-
         allComments.forEach((comment) => {
           const docId = comment.document?.id ?? `unknown-${comment.id}`;
           const docTitle = comment.document?.title ?? "Untitled";
@@ -63,51 +62,54 @@ export default function CommentsPage() {
   }, []);
 
   if (loading)
-    return <div className="p-8 text-gray-500">Loading documents...</div>;
+    return (
+      <div className="p-8 text-gray-500 text-center">Loading documents...</div>
+    );
 
   if (error)
-    return <div className="p-8 text-red-500">{error}</div>;
+    return (
+      <div className="p-8 text-red-500 text-center">{error}</div>
+    );
 
   if (documents.length === 0)
-    return <div className="p-8 text-gray-500">No documents found.</div>;
+    return (
+      <div className="p-8 text-center text-gray-500">
+        No documents found.
+      </div>
+    );
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-semibold text-gray-800 mb-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">
         Documents with Comments
       </h1>
 
-      <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
-              <th className="p-4 text-left">Document</th>
-              <th className="p-4 text-left">Comments</th>
-            </tr>
-          </thead>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {documents.map((doc) => (
+          <Link
+            key={doc.id}
+            href={`/dashboard/comments/${doc.id}`}
+            className="group block"
+          >
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+              <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition">
+                {doc.title}
+              </h2>
 
-          <tbody className="divide-y divide-gray-100">
-            {documents.map((doc) => (
-              <tr
-                key={doc.id}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                <td className="p-4">
-                  <Link
-                    href={`/dashboard/comments/${doc.id}`} // ✅ FIXED ROUTE
-                    className="text-blue-600 font-medium hover:underline"
-                  >
-                    {doc.title}
-                  </Link>
-                </td>
+              <p className="mt-2 text-sm text-gray-500">
+                View comments for this document
+              </p>
 
-                <td className="p-4 text-gray-700 font-medium">
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-xs text-gray-400">Comments</span>
+
+                <span className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full">
                   {doc.commentCount}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
