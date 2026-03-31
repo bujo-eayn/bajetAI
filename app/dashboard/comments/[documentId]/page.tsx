@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+type Reaction = {
+  target_id: string;
+  reaction_type: "thumbs_up" | "thumbs_down";
+};
+
 type Comment = {
   id: string;
   content: string;
   created_at: string;
   author?: { username?: string | null } | null;
   document?: { id?: string; title?: string | null } | null;
+  reactions?: Reaction[];
 };
 
 export default function DocumentCommentsPage() {
@@ -53,6 +59,13 @@ export default function DocumentCommentsPage() {
       minute: "2-digit",
     });
 
+  // Helper to count thumbs up / thumbs down
+  const countReactions = (reactions?: Reaction[]) => {
+    const likes = reactions?.filter((r) => r.reaction_type === "thumbs_up").length ?? 0;
+    const dislikes = reactions?.filter((r) => r.reaction_type === "thumbs_down").length ?? 0;
+    return { likes, dislikes };
+  };
+
   if (loading)
     return <div className="p-8 text-gray-500 text-center">Loading comments...</div>;
   if (error)
@@ -78,32 +91,39 @@ export default function DocumentCommentsPage() {
               <th className="p-4 text-left">User</th>
               <th className="p-4 text-left">Comment</th>
               <th className="p-4 text-left">Time</th>
+              <th className="p-4 text-left">Reactions</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {comments.map((comment) => (
-              <tr
-                key={comment.id}
-                className="hover:bg-gray-50 transition"
-              >
-                <td className="p-4 flex items-center gap-3">
-                  {/* Avatar circle */}
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
-                    {comment.author?.username?.[0]?.toUpperCase() ?? "U"}
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    {comment.author?.username ?? "Unknown"}
-                  </span>
-                </td>
+            {comments.map((comment) => {
+              const { likes, dislikes } = countReactions(comment.reactions);
+              return (
+                <tr
+                  key={comment.id}
+                  className="hover:bg-gray-50 transition"
+                >
+                  <td className="p-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
+                      {comment.author?.username?.[0]?.toUpperCase() ?? "U"}
+                    </div>
+                    <span className="font-medium text-gray-800">
+                      {comment.author?.username ?? "Unknown"}
+                    </span>
+                  </td>
 
-                <td className="p-4 text-gray-600">{comment.content}</td>
+                  <td className="p-4 text-gray-600">{comment.content}</td>
 
-                <td className="p-4 text-sm text-gray-400">
-                  {comment.created_at ? formatDate(comment.created_at) : "-"}
-                </td>
-              </tr>
-            ))}
+                  <td className="p-4 text-sm text-gray-400">
+                    {comment.created_at ? formatDate(comment.created_at) : "-"}
+                  </td>
+
+                  <td className="p-4 text-sm text-gray-500">
+                    👍 {likes} | 👎 {dislikes}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
