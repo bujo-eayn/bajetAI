@@ -5,6 +5,7 @@ import Link from "next/link";
 
 type Comment = {
   id: string;
+  parent_id?: string | null; // <-- track nested replies
   content: string;
   created_at: string;
   author?: { username?: string | null } | null;
@@ -14,7 +15,7 @@ type Comment = {
 type DocumentSummary = {
   id: string;
   title: string;
-  commentCount: number;
+  commentCount: number; // top-level only
 };
 
 export default function CommentsPage() {
@@ -31,20 +32,23 @@ export default function CommentsPage() {
 
         const allComments: Comment[] = data?.data ?? [];
 
-        // Group comments by document
+        // Group top-level comments by document
         const docMap: Record<string, DocumentSummary> = {};
         allComments.forEach((comment) => {
-          const docId = comment.document?.id ?? `unknown-${comment.id}`;
-          const docTitle = comment.document?.title ?? "Untitled";
+          // Only count top-level comments
+          if (!comment.parent_id) {
+            const docId = comment.document?.id ?? `unknown-${comment.id}`;
+            const docTitle = comment.document?.title ?? "Untitled";
 
-          if (!docMap[docId]) {
-            docMap[docId] = {
-              id: docId,
-              title: docTitle,
-              commentCount: 1,
-            };
-          } else {
-            docMap[docId].commentCount += 1;
+            if (!docMap[docId]) {
+              docMap[docId] = {
+                id: docId,
+                title: docTitle,
+                commentCount: 1,
+              };
+            } else {
+              docMap[docId].commentCount += 1;
+            }
           }
         });
 
@@ -101,7 +105,7 @@ export default function CommentsPage() {
               </p>
 
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-gray-400">Comments</span>
+                <span className="text-xs text-gray-400">Top-level Comments</span>
 
                 <span className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full">
                   {doc.commentCount}

@@ -10,11 +10,13 @@ type Reaction = {
 
 type Comment = {
   id: string;
+  parent_id?: string | null;
   content: string;
   created_at: string;
   author?: { username?: string | null } | null;
   document?: { id?: string; title?: string | null } | null;
   reactions?: Reaction[];
+  replies?: Comment[]; // ✅ supports nested comments
 };
 
 export default function DocumentCommentsPage() {
@@ -34,10 +36,23 @@ export default function DocumentCommentsPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        const allComments: Comment[] = data?.data ?? [];
-        const filtered = allComments.filter((c) => c.document?.id === documentId);
+        const structuredComments: Comment[] = data?.data ?? [];
 
-        setComments(filtered);
+        // Filter only comments for this document
+        const filtered = structuredComments.filter(
+          (c) => c.document?.id === documentId
+        );
+
+        // Ensure reactions exist for all comments and replies
+        const ensureReactions = (comments: Comment[]): Comment[] => {
+          return comments.map((c) => ({
+            ...c,
+            reactions: c.reactions ?? [],
+            replies: c.replies ? ensureReactions(c.replies) : [],
+          }));
+        };
+
+        setComments(ensureReactions(filtered));
       } catch (err: any) {
         console.error(err);
         setError("Failed to load comments for this document.");
@@ -59,17 +74,12 @@ export default function DocumentCommentsPage() {
       minute: "2-digit",
     });
 
-  // Helper to count thumbs up / thumbs down
-  const countReactions = (reactions?: Reaction[]) => {
-    const likes = reactions?.filter((r) => r.reaction_type === "thumbs_up").length ?? 0;
-    const dislikes = reactions?.filter((r) => r.reaction_type === "thumbs_down").length ?? 0;
-    return { likes, dislikes };
-  };
-
   if (loading)
     return <div className="p-8 text-gray-500 text-center">Loading comments...</div>;
+
   if (error)
     return <div className="p-8 text-red-500 text-center">{error}</div>;
+
   if (comments.length === 0)
     return (
       <div className="p-8 text-center text-gray-500">
@@ -77,55 +87,63 @@ export default function DocumentCommentsPage() {
       </div>
     );
 
+  const renderComment = (comment: Comment, level = 0) => {
+    const thumbsUp =
+      comment.reactions?.filter((r) => r.reaction_type === "thumbs_up").length ?? 0;
+
+    const thumbsDown =
+      comment.reactions?.filter((r) => r.reaction_type === "thumbs_down").length ?? 0;
+
+    return (
+      <div
+        key={comment.id}
+        className="mb-4 border-l border-gray-200 pl-4"
+        style={{ marginLeft: level * 20 }}
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
+            {comment.author?.username?.[0]?.toUpperCase() ?? "U"}
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-800">
+                {comment.author?.username ?? "Unknown"}
+              </span>
+              <span className="text-xs text-gray-400">
+                {formatDate(comment.created_at)}
+              </span>
+            </div>
+
+            <p className="text-gray-600 mt-1">{comment.content}</p>
+
+            <div className="mt-1 flex gap-3 text-sm text-gray-500">
+              <span>👍 {thumbsUp}</span>
+              <span>👎 {thumbsDown}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ Recursive rendering of replies */}
+        {comment.replies?.map((reply) =>
+          renderComment(reply, level + 1)
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
         Comments for {comments[0]?.document?.title ?? "Untitled"}
       </h1>
-      <p className="text-gray-500 mb-6">{comments.length} comment(s)</p>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-              <th className="p-4 text-left">User</th>
-              <th className="p-4 text-left">Comment</th>
-              <th className="p-4 text-left">Time</th>
-              <th className="p-4 text-left">Reactions</th>
-            </tr>
-          </thead>
+      <p className="text-gray-500 mb-6">
+        {comments.length} top-level comment(s)
+      </p>
 
-          <tbody className="divide-y divide-gray-100">
-            {comments.map((comment) => {
-              const { likes, dislikes } = countReactions(comment.reactions);
-              return (
-                <tr
-                  key={comment.id}
-                  className="hover:bg-gray-50 transition"
-                >
-                  <td className="p-4 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
-                      {comment.author?.username?.[0]?.toUpperCase() ?? "U"}
-                    </div>
-                    <span className="font-medium text-gray-800">
-                      {comment.author?.username ?? "Unknown"}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-gray-600">{comment.content}</td>
-
-                  <td className="p-4 text-sm text-gray-400">
-                    {comment.created_at ? formatDate(comment.created_at) : "-"}
-                  </td>
-
-                  <td className="p-4 text-sm text-gray-500">
-                    👍 {likes} | 👎 {dislikes}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        {comments.map((comment) => renderComment(comment))}
       </div>
     </div>
   );

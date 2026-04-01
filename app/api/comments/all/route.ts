@@ -14,6 +14,7 @@ export async function GET() {
       .select(`
         id,
         content,
+        parent_id,
         created_at,
         author:public_profiles(username),
         document:documents(id, title)
@@ -41,13 +42,21 @@ export async function GET() {
 
     // 3️⃣ Attach reactions to each comment
     const commentsWithReactions = comments.map((comment) => {
-      const reactions = reactionsData?.filter(
-        (r) => r.target_id === comment.id
-      ) ?? [];
+      const reactions = reactionsData?.filter((r) => r.target_id === comment.id) ?? [];
       return { ...comment, reactions };
     });
 
-    return NextResponse.json({ data: commentsWithReactions });
+    // 4️⃣ Separate top-level and nested comments
+    const topLevelComments = commentsWithReactions.filter(c => !c.parent_id);
+    const nestedComments = commentsWithReactions.filter(c => c.parent_id);
+
+    // Map top-level comments and attach their replies
+    const structuredComments = topLevelComments.map(c => ({
+      ...c,
+      replies: nestedComments.filter(nc => nc.parent_id === c.id)
+    }));
+
+    return NextResponse.json({ data: structuredComments });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
