@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 type Reaction = {
   target_id: string;
@@ -16,11 +16,12 @@ type Comment = {
   author?: { username?: string | null } | null;
   document?: { id?: string; title?: string | null } | null;
   reactions?: Reaction[];
-  replies?: Comment[]; // ✅ supports nested comments
+  replies?: Comment[];
 };
 
 export default function DocumentCommentsPage() {
   const params = useParams();
+  const router = useRouter(); // ✅ added router
   const documentId = params?.documentId as string;
 
   const [comments, setComments] = useState<Comment[]>([]);
@@ -38,12 +39,10 @@ export default function DocumentCommentsPage() {
 
         const structuredComments: Comment[] = data?.data ?? [];
 
-        // Filter only comments for this document
         const filtered = structuredComments.filter(
           (c) => c.document?.id === documentId
         );
 
-        // Ensure reactions exist for all comments and replies
         const ensureReactions = (comments: Comment[]): Comment[] => {
           return comments.map((c) => ({
             ...c,
@@ -124,7 +123,6 @@ export default function DocumentCommentsPage() {
           </div>
         </div>
 
-        {/* ✅ Recursive rendering of replies */}
         {comment.replies?.map((reply) =>
           renderComment(reply, level + 1)
         )}
@@ -134,7 +132,15 @@ export default function DocumentCommentsPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      {/*BACK BUTTON */}
+      <button
+        onClick={() => router.back()}
+        className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-300 rounded-lg text-sm font-medium transition"
+      >
+        Back
+      </button>
+
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">
         Comments for {comments[0]?.document?.title ?? "Untitled"}
       </h1>
 

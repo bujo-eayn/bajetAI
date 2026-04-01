@@ -5,7 +5,7 @@ import Link from "next/link";
 
 type Comment = {
   id: string;
-  parent_id?: string | null; // <-- track nested replies
+  parent_id?: string | null;
   content: string;
   created_at: string;
   author?: { username?: string | null } | null;
@@ -15,7 +15,7 @@ type Comment = {
 type DocumentSummary = {
   id: string;
   title: string;
-  commentCount: number; // top-level only
+  commentCount: number;
 };
 
 export default function CommentsPage() {
@@ -34,8 +34,8 @@ export default function CommentsPage() {
 
         // Group top-level comments by document
         const docMap: Record<string, DocumentSummary> = {};
+
         allComments.forEach((comment) => {
-          // Only count top-level comments
           if (!comment.parent_id) {
             const docId = comment.document?.id ?? `unknown-${comment.id}`;
             const docTitle = comment.document?.title ?? "Untitled";
@@ -67,7 +67,9 @@ export default function CommentsPage() {
 
   if (loading)
     return (
-      <div className="p-8 text-gray-500 text-center">Loading documents...</div>
+      <div className="p-8 text-gray-500 text-center">
+        Loading documents...
+      </div>
     );
 
   if (error)
@@ -96,7 +98,12 @@ export default function CommentsPage() {
             className="group block"
           >
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
-              <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition">
+              
+              {/* ✅ Ellipsis applied here */}
+              <h2
+                className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition truncate"
+                title={doc.title}
+              >
                 {doc.title}
               </h2>
 
@@ -105,7 +112,9 @@ export default function CommentsPage() {
               </p>
 
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-gray-400">Top-level Comments</span>
+                <span className="text-xs text-gray-400">
+                  Top-level Comments
+                </span>
 
                 <span className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full">
                   {doc.commentCount}
