@@ -21,7 +21,7 @@ type Comment = {
 
 export default function DocumentCommentsPage() {
   const params = useParams();
-  const router = useRouter(); // ✅ added router
+  const router = useRouter();
   const documentId = params?.documentId as string;
 
   const [comments, setComments] = useState<Comment[]>([]);
@@ -89,7 +89,6 @@ export default function DocumentCommentsPage() {
   const renderComment = (comment: Comment, level = 0) => {
     const thumbsUp =
       comment.reactions?.filter((r) => r.reaction_type === "thumbs_up").length ?? 0;
-
     const thumbsDown =
       comment.reactions?.filter((r) => r.reaction_type === "thumbs_down").length ?? 0;
 
@@ -123,24 +122,22 @@ export default function DocumentCommentsPage() {
           </div>
         </div>
 
-        {comment.replies?.map((reply) =>
-          renderComment(reply, level + 1)
-        )}
+        {comment.replies?.map((reply) => renderComment(reply, level + 1))}
       </div>
     );
   };
 
   return (
     <div className="p-8">
-      {/*BACK BUTTON */}
+      {/* ✅ BACK BUTTON: uses router.push to avoid remount hang */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/dashboard/comments")}
         className="mb-4 px-4 py-2 bg-gray-300 hover:bg-gray-300 rounded-lg text-sm font-medium transition"
       >
         Back
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <h1 className="text-1xl font-bold text-gray-800 mb-2">
         Comments for {comments[0]?.document?.title ?? "Untitled"}
       </h1>
 
