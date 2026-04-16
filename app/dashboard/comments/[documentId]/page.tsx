@@ -28,40 +28,80 @@ export default function DocumentCommentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Reply state
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     if (!documentId) return;
-
-    const fetchComments = async () => {
-      try {
-        const res = await fetch("/api/comments/all");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-        const structuredComments: Comment[] = data?.data ?? [];
-
-        const ensureSafe = (comments: Comment[]): Comment[] =>
-          comments.map((c) => ({
-            ...c,
-            reactions: c.reactions ?? [],
-            replies: (c.replies ?? []).map((r) => ensureSafe([r])[0]),
-          }));
-
-        const filtered = structuredComments.filter(
-          (c) => c.document?.id === documentId
-        );
-
-        setComments(ensureSafe(filtered));
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load comments for this document.");
-        setComments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchComments();
   }, [documentId]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await fetch("/api/comments/all");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const structuredComments: Comment[] = data?.data ?? [];
+
+      const ensureSafe = (comments: Comment[]): Comment[] =>
+        comments.map((c) => ({
+          ...c,
+          reactions: c.reactions ?? [],
+          replies: (c.replies ?? []).map((r) => ensureSafe([r])[0]),
+        }));
+
+      const filtered = structuredComments.filter(
+        (c) => c.document?.id === documentId
+      );
+
+      setComments(ensureSafe(filtered));
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load comments for this document.");
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Submit reply to backend
+  const handleReplySubmit = async (parentId: string) => {
+    if (!replyText.trim()) return;
+
+    try {
+      setSubmitting(true);
+
+      const res = await fetch("/api/comments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: replyText,
+          author_id: "admin-user-id", 
+          parent_id: parentId,
+          document_id: documentId,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send reply");
+
+      // Refresh comments
+      await fetchComments();
+
+      // Reset UI
+      setReplyText("");
+      setReplyingTo(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send reply");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleString([], {
@@ -125,13 +165,53 @@ export default function DocumentCommentsPage() {
           {comment.content}
         </p>
 
-        {/* Reactions */}
-        <div className="flex gap-4 text-xs text-gray-500 mt-2 ml-11">
+        {/* Reactions + Reply */}
+        <div className="flex gap-4 text-xs text-gray-500 mt-2 ml-11 items-center">
           <span>👍 {thumbsUp}</span>
           <span>👎 {thumbsDown}</span>
+
+          <button
+            onClick={() => setReplyingTo(comment.id)}
+            className="text-blue-500 hover:underline"
+          >
+            Reply as Admin
+          </button>
         </div>
 
-        {/* Replies (still kept but minimal visual) */}
+        {/* Reply Input */}
+        {replyingTo === comment.id && (
+          <div className="ml-11 mt-2">
+            <textarea
+              autoFocus
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write a reply..."
+              className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => handleReplySubmit(comment.id)}
+                disabled={submitting}
+                className="px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 disabled:opacity-50"
+              >
+                {submitting ? "Sending..." : "Reply"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setReplyingTo(null);
+                  setReplyText("");
+                }}
+                className="px-3 py-1 bg-gray-200 text-xs rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Replies */}
         {replies.length > 0 && (
           <div className="mt-2">
             {replies.map((reply) => renderComment(reply, level + 1))}
@@ -142,27 +222,16 @@ export default function DocumentCommentsPage() {
   };
 
   if (loading)
-    return (
-      <div className="p-8 text-center text-gray-500">
-        Loading comments...
-      </div>
-    );
+    return <div className="p-8 text-center text-gray-500">Loading comments...</div>;
 
   if (error)
-    return (
-      <div className="p-8 text-center text-red-500">{error}</div>
-    );
+    return <div className="p-8 text-center text-red-500">{error}</div>;
 
   if (comments.length === 0)
-    return (
-      <div className="p-8 text-center text-gray-500">
-        No comments for this document.
-      </div>
-    );
+    return <div className="p-8 text-center text-gray-500">No comments for this document.</div>;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Back Button */}
       <button
         onClick={() => router.push("/dashboard/comments")}
         className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
@@ -170,12 +239,10 @@ export default function DocumentCommentsPage() {
         Back
       </button>
 
-      {/* Title */}
       <h1 className="text-lg font-semibold text-gray-800 mb-4">
         Comments for {comments[0]?.document?.title ?? "Untitled"}
       </h1>
 
-      {/* Comments */}
       <div>
         {comments.map((comment) => renderComment(comment))}
       </div>
