@@ -12,12 +12,13 @@ export async function POST(req: Request) {
 
     const {
       content,
-      author_id,
       document_id,
       parent_id = null,
+      is_admin_response = false,
     } = body;
 
-    if (!content || !author_id || !document_id) {
+    // ✅ FIXED: remove author_id requirement
+    if (!content || !document_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -25,24 +26,26 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await supabase
-      .from("comments")
+      .from("document_comments") // ✅ FIXED TABLE
       .insert([
         {
           content,
-          author_id,
           document_id,
           parent_id,
+          is_admin_response, // ✅ IMPORTANT
         },
       ])
       .select()
       .single();
 
     if (error) {
+      console.error("DB ERROR:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (err: any) {
+    console.error(err);
     return NextResponse.json(
       { error: err.message || "Server error" },
       { status: 500 }

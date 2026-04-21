@@ -81,7 +81,7 @@ export default function DocumentCommentsPage() {
         },
         body: JSON.stringify({
           content: replyText,
-          author_id: "admin-user-id", 
+          is_admin_response: true, 
           parent_id: parentId,
           document_id: documentId,
         }),
