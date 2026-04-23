@@ -240,6 +240,7 @@ function generateSources(chunks: EmbeddingSearchResult[]): ChatSource[] {
     pageNumber: chunk.pageNumber,
     sectionName: chunk.sectionName,
     preview: chunk.chunkText.substring(0, 150) + (chunk.chunkText.length > 150 ? '...' : ''),
+    chunkText: chunk.chunkText,
     relevanceScore: chunk.similarity,
   }));
 }
