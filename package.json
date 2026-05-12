@@ -2,6 +2,7 @@
   "name": "bajetai",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,12 +12,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:types": "npx supabase gen types typescript --project-id uugujlvezpminoxlsevo > types/database.types.ts",
-    "logs:inngest": "echo 'Inngest Dashboard: http://localhost:8288' && npm run dev",
+    "logs:inngest": "echo 'Inngest Dashboard: http://localhost:8288' && pnpm run dev",
     "logs:vercel": "vercel logs --follow",
     "health:db": "curl http://localhost:3000/api/health",
     "health:hf": "curl http://localhost:3000/api/health/huggingface",
     "health:rate-limit": "curl http://localhost:3000/api/health/huggingface/rate-limit",
-    "monitor": "npm run logs:inngest"
+    "monitor": "pnpm run logs:inngest"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",
@@ -32,7 +33,7 @@
     "@supabase/supabase-js": "^2.78.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "inngest": "^3.22.12",
+    "inngest": "^3.54.2",
     "lucide-react": "^0.552.0",
     "next": "^16.0.8",
     "openai": "^6.9.1",
