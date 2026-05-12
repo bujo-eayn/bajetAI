@@ -280,6 +280,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
               documentId={document.id}
               documentTitle={document.title}
               documentType={document.documentType}
+              enableVoice={true}
               externalOpen={chatOpen}
               onExternalOpenChange={setChatOpen}
             />
